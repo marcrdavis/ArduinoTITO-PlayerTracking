@@ -1,0 +1,12 @@
+DisplayWidth=20
+DisplayHeight=2
+ScrollDelay=110
+logToSerial=1
+LocalStorage=1
+ssid=WIFISSIDHERE
+pass=WIFIPASSWORDHERE
+BettorIPAddress=BETTORSLOTSIPADDRESSHERE
+CasinoName=The CASINO
+ScrollingText=Welcome to the Casino! Enjoy your stay!                    Please insert your Player Card
+PlayerMessage=Welcome back [CARDHOLDER]! Enjoy your stay in The CASINO
+
