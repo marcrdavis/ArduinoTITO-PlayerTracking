@@ -19,7 +19,7 @@ PlayerMessage=Welcome back [CARDHOLDER]! Enjoy your stay in The CASINO
 
 [CARDHOLDER] is a variable you can use in the PlayerMessage to show the Cardholder’s name. Messages cannot exceed 256 characters.
 
-The player file is a standard .TXT file in a ‘property=value’ format. The filename is based on the RFID Card ID. New cards automatically create a default file on the SD card with the following properties:
+The player file is a standard .TXT file in a ‘property=value’ format. The filename is based on the RFID Card ID, example: DA939819.TXT. On first use new cards automatically create a default file on the SD card with the following properties:
 
 Cardholder=Player
 CardType=1
@@ -36,6 +36,9 @@ CardType=3
 CreditsToAdd=9999
 
 The Cardholder must say ‘SYSTEM BONUS’. The CardType property must be a 3. You can set the CreditsToAdd property to be any number up to your max credits amount on the machine.
+
+NOTE: CardType 2 is reserved for an Admin role.
+
 
 
 
