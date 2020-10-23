@@ -600,7 +600,7 @@ bool checkForPlayerCard()
         Serial.println(F("Card Removed"));
 
         bool haveEndingStats = false;
-        if (Cardholder != "SYSTEM BONUS" &haveStartingStats) haveEndingStats = retrySlotData(3);
+        if (CardType != 3 &haveStartingStats) haveEndingStats = retrySlotData(3);
 
         if (haveStartingStats & haveEndingStats)
         {
@@ -617,7 +617,7 @@ bool checkForPlayerCard()
         }
         else
         {
-          if (Cardholder != "SYSTEM BONUS") Serial.println(F("Could not read current stats from game. Player's current session will not be saved."));
+          if (CardType == 1) Serial.println(F("Could not read current stats from game. Player's current session will not be saved."));
         }
 
         // Clear variables
