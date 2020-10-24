@@ -2,6 +2,12 @@
 A homebrew slot machine player tracking and display project
 By Marc Davis (10/22/2020)
 
+  Project goals: To allow home slot machine owners the ability to use the player tracking
+  display and card reader (with RFID modifications) which are normally non-functional
+  outside of casinos. This replaces the Bally MasterCom device. The initial release only stores
+  player tracking data locally. I will soon include a way to share player data across
+  multiple machines via WiFi.
+
   Hardware requirements: Arduino Mega 2560 R3; RFID RC 522; Cytron WiFi Shield; Compatible
   vacuum fluorescent display or LCD; if using an LCD then modifications will be required.
 
