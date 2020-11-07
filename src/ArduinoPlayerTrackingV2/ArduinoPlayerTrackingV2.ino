@@ -87,9 +87,9 @@ String gameName = "Slot Machine";
 String stringData = "";
 
 char ipAddress[15];
-char casinoName[30] = "THE CASINO";
+char casinoName[30] = "THE CASINO";  // actual text should not exceed the display width
 char scrollingText[256] = "Welcome to [CASINONAME]! Enjoy your stay!                    Please insert your Player Card";
-char playerMessage[256] = "Welcome back[CARDHOLDER]! Enjoy your stay!";
+char playerMessage[256] = "Welcome back [CARDHOLDER]! Enjoy your stay!";
 char scrollBuffer[296];
 char fixedBuffer[21];
 
@@ -101,7 +101,7 @@ const char htmlHeader[] = "HTTP/1.1 200 OK\r\n"
 
 const char htmlFooter[] = "</html>\r\n\r\n";
 
-byte mac[] = { 0x38, 0x24, 0x01, 0x00, 0x00, 0x00 }; // You will need to update this if multiple boards on network
+byte mac[] = { 0x38, 0x24, 0x01, 0x00, 0x00, 0x00 }; // Will be set by init routine
 IPAddress ip(192, 168, 1, 254);  // Default address in case ipAddress not populated in config and DHCP unavailable
 IPAddress serverIP(192, 168, 1, 254); // The board should not point to itself as a web client
 
