@@ -1,4 +1,4 @@
-Cardholder=SYSTEM BONUS
-CardType=3
-CreditsToAdd=9999
+cardHolder=SYSTEM BONUS
+cardType=3
+creditsToAdd=9999
 

@@ -1,6 +1,7 @@
-Cardholder=Marc Davis
-CardType=1
-PlayerTotalGames=4
-PlayerGamesWon=1
-PlayerGamesLost=3
-PlayerTotalWon=80
+[CardData]
+carHholder=Marc Davis
+cardType=1
+playerTotalGames=4
+playerGamesWon=1
+playerGamesLost=3
+playerTotalWon=80
