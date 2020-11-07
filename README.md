@@ -1,5 +1,5 @@
 # Arduino TITO and PlayerTracking
-A homebrew slot machine player tracking and display project
+A homebrew slot machine TITO, player tracking and display project
 By Marc Davis (11/7/2020)
 
   Project goals: To allow home slot machine owners the ability to use the player tracking
