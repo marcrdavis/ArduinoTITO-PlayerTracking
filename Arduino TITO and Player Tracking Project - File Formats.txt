@@ -26,6 +26,8 @@ playerMessage=Welcome back [CARDHOLDER]! Enjoy your stay in [CASINONAME]
 [CARDHOLDER] is a variable you can use in the playerMessage to show the Cardholder’s name. Messages cannot exceed 256 characters.
 [CASINONAME] is a variable you can use in the scrollingText or playerMessage to show the Casino Name.
 
+Scrolling messages have a length of 255 characters; Text fields have a length of 30 characters - except for the casinoName field which has a max length equal to the display width or 30 characters - whichever is less. All other fields are boolean or integer.
+
 The player file is a standard .TXT file in a ‘property=value’ format. Property names are CASE SENSITIVE. The filename is based on the RFID Card ID, example: DA939819.TXT. On first use new cards automatically create a default file on the SD card (or server) with the following properties:
 
 cardHolder=Player
