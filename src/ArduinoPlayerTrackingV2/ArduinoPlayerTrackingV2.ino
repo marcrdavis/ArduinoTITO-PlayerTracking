@@ -1,5 +1,5 @@
 /*
-  Arduino TITO and Player Tracking v2.0.20201107
+  Arduino TITO and Player Tracking v2.0.20201222
   by Marc R. Davis - Copyright (c) 2020 All Rights Reserved
 
   Portions of the Arduino SAS protocol implementation by Ian Walker - Thank you!
@@ -18,7 +18,7 @@
         not affiliated with this project and does not support or endorse using their apps for this purpose;
         This project does not use BETTORSlots code.
 
-  This software is licensed to you under The Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 
+  This software is licensed to you under The Creative Commons Attribution-NonCommercial-NoDerivatives 4.0
   International license (https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode).
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS
@@ -188,7 +188,7 @@ void setup()
   Serial1.setTimeout(200);
   pinMode(LED, OUTPUT);
 
-  Serial.println(F("Arduino TITO and Player Tracking - Version 2.0 (Nov 7, 2020) By Marc R. Davis"));
+  Serial.println(F("Arduino TITO and Player Tracking - Version 2.0 (Dec 22, 2020) By Marc R. Davis"));
   Serial.println("Initializing...");
 
   // Setup Scrolling Text
@@ -226,11 +226,11 @@ void setup()
 
 void loop()
 {
+  // Check for DHCP renewal
+  checkEthernet();
+  
   if (onlyTITO)
   {
-    // Check for DHCP renewal
-    checkEthernet();
-
     // Check web
     htmlPoll();
 
@@ -240,9 +240,6 @@ void loop()
   else
   {
     showMessageOnVFD(casinoName, 0);
-
-    // Check for DHCP renewal
-    checkEthernet();
 
     // Scroll Text Loop
     for (int letter = 0; letter <= strlen(scrollBuffer) - displayWidth; letter++) //From 0 to upto n-displayWidth characters supply to below function
@@ -365,7 +362,6 @@ String readPlayerDataFromSD(String cid, bool remote)
   {
     // Create file with defaults
     writePlayerDataToSD(CardFilename, 1, "Player", 0, 0, 0, 0);
-    return "Player|1|0|0|0|0|0";
   }
 
   char buffer[30];
@@ -390,6 +386,7 @@ String readPlayerDataFromSD(String cid, bool remote)
       if (ini.getValue(NULL, "playerGamesLost", buffer, 30)) playerGamesLost = atol(buffer);
       if (ini.getValue(NULL, "playerTotalWon", buffer, 30)) playerTotalWon = atol(buffer);
       if (ini.getValue(NULL, "creditsToAdd", buffer, 30)) creditsToAdd = String(buffer);
+      if (cardHolder == "") cardHolder = "Player";
     }
     ini.close();
   }
@@ -694,14 +691,14 @@ bool checkForPlayerCard()
           showMessageOnVFD("GOOD LUCK!", 0);
           delay(2000);
 
-          String tmp = String(playerMessage);
-          tmp.replace("[CARDHOLDER]", cardHolder);
-          tmp.replace("[CASINONAME]", casinoName);
-          tmp.toCharArray(playerMessage, tmp.length() + 1);
-
           strcpy(scrollBuffer, "                    ");
           strcat(scrollBuffer, playerMessage);
           strcat(scrollBuffer, "                    ");
+          
+          String tmp = String(scrollBuffer);
+          tmp.replace("[CARDHOLDER]", cardHolder);
+          tmp.replace("[CASINONAME]", casinoName);
+          tmp.toCharArray(scrollBuffer, tmp.length() + 1);
 
           Serial.println("Ready for play");
           return true;
@@ -1034,6 +1031,7 @@ void htmlPoll()
       if (command == "rh") resetHandpay();
       if (command == "ec") changeButtonToCredits(true);
       if (command == "dc") changeButtonToCredits(false);
+      if (command == "pn" && cardHolder != "") cardHolder=urlDecode(getValue(getValue(querystring, '&', 0), '=', 1));
 
       if (command == "ud") // Update Ticket Data
       {
