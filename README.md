@@ -21,7 +21,8 @@ By Marc Davis (12/22/2020)
     You will need my modified version of IeeFlipNoFrills.h which fixes compatibility issues with
     newer Arduino IDE
 
-  For TITO Setup please follow the included documentation
+  For TITO Setup please follow the included documentation. This has been tested only on IGT GameKings and S2000s. 
+  AVP may not be working yet - trying to determine cause with an end-user.
 
   Note: Remote access has been made compatible with BETTORSlots TITO apps for IOS/Android; BETTORSlots is
         not affiliated with this project and does not support or endorse using their apps for this purpose;
