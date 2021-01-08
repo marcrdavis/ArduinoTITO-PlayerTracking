@@ -1,11 +1,12 @@
 /*
-  Arduino TITO and Player Tracking v2.0.20201222
-  by Marc R. Davis - Copyright (c) 2020 All Rights Reserved
+  Arduino TITO and Player Tracking v2.0.20210107
+  by Marc R. Davis - Copyright (c) 2020-2021 All Rights Reserved
 
   Portions of the Arduino SAS protocol implementation by Ian Walker - Thank you!
+  Additional testing and troubleshooting by NLG member Eddiiie - Thank you!
 
   Hardware requirements: Arduino Mega 2560 R3; RFID RC 522; W5100 Ethernet Shield; Serial Port Shield;
-  Compatible vacuum fluorescent display or LCD; if using an LCD then modifications will be required;
+  Compatible vacuum fluorescent display or LCD; if using an LCD then modifications will be required - see inline comments;
   Modifications will be required if using another type of ethernet shield; Wifi shields are NOT recommended
 
   Software requirements:
@@ -34,6 +35,7 @@
 
 #include <IniFile.h>
 #include <IeeFlipNoFrills.h>
+//#include <LiquidCrystal.h>  // Enable this for LCDs and Disable IeeFlipNoFrills.h above
 #include <SPI.h>
 #include <MFRC522.h>
 #include <SD.h>
@@ -119,15 +121,15 @@ byte returnStatus[1];
 
 byte SVNS[2] = {SASAdr, 0x57};
 byte TP[2] = {SASAdr, 0x70};
-byte RHP[2] = {SASAdr, 0x1B};
+byte HPI[2] = {SASAdr, 0x1B};
+byte RHP[4] = {SASAdr, 0x94};
 byte LOCK[4] = {SASAdr, 0x01, 0x51, 0x08};
 byte ULOCK[4] = {SASAdr, 0x02, 0xCA, 0x3A};
 byte MUTE[4] = {SASAdr, 0x03, 0x43, 0x2B};
 byte UMUTE[4] = {SASAdr, 0x04, 0xFC, 0x5F};
 byte EBILL[4] = {SASAdr, 0x06, 0xEE, 0x7C};
 byte DBILL[4] = {SASAdr, 0x07, 0x67, 0x6D};
-byte HPRES[4] = {SASAdr, 0x94, 0x75, 0xCB};
-byte EVInfo[5] = {SASAdr, 0x4D, 0x00, CRCH, CRCL};
+byte EVInfo[5] = {SASAdr, 0x4D, 0x00, 0x00, 0x00};
 byte transComplete[6] = {SASAdr, 0x71, 0x01, 0xFF, 0x1F, 0xD0};
 byte globalCRC[2];
 byte mCredits[2] = {SASAdr, 0x1A};
@@ -155,6 +157,8 @@ byte TDR [5];
 IeeFlipNoFrills vfd(22, 23, /*control pins */
                     31, 30, 29, 28, 27, 26, 25, 24 /*data pins */);
 
+// LiquidCrystal vfd(22, 23, 27, 26, 25, 24);  // Enable this for LCDs and Disable IeeFlipNoFrills above
+                    
 MFRC522 mfrc522(SS_PIN, RST_PIN); // Create MFRC522 instance.
 File sdFile;
 EthernetServer server(80);
@@ -188,8 +192,8 @@ void setup()
   Serial1.setTimeout(200);
   pinMode(LED, OUTPUT);
 
-  Serial.println(F("Arduino TITO and Player Tracking - Version 2.0 (Dec 22, 2020) By Marc R. Davis"));
-  Serial.println("Initializing...");
+  Serial.println(F("Arduino TITO and Player Tracking - Version 2.0.20210107 By Marc R. Davis"));
+  Serial.println(F("Initializing..."));
 
   // Setup Scrolling Text
   String tmp = String(scrollingText);
@@ -208,7 +212,7 @@ void setup()
     // Setup RFID
     mfrc522.PCD_Init();
   }
-  else Serial.println("TITO Only Mode Enabled");
+  else Serial.println(F("TITO Only Mode Enabled"));
 
   showMessageOnVFD("Initializing...", 0);
   delay(2000);
@@ -218,6 +222,9 @@ void setup()
 
   // Initialize HTTP Server
   server.begin();
+
+  // Clear the serial buffer
+  if (Serial1.available() > 3) while (Serial1.available() > 3) Serial1.read();
 
   Serial.println(F("Initialization complete"));
 }
@@ -280,6 +287,7 @@ void readConfig()
   if (ini.getValue(NULL, "scrollDelay", buffer, 256)) scrollDelay = atoi(buffer);
   if (ini.getValue(NULL, "logToSerial", buffer, 256)) logToSerial = atoi(buffer);
   if (ini.getValue(NULL, "localStorage", buffer, 256)) localStorage = atoi(buffer);
+  if (ini.getValue(NULL, "onlyTITO", buffer, 256)) onlyTITO = atoi(buffer);
   if (ini.getValue(NULL, "changeToCredits", buffer, 256)) changeToCredits = atoi(buffer);
   if (ini.getValue(NULL, "useDHCP", buffer, 256)) useDHCP = atoi(buffer);
   if (ini.getValue(NULL, "changeCredits", buffer, 256)) changeCredits = String(buffer);
@@ -320,7 +328,7 @@ bool addCredits(String credits)
 
   strcpy(fixedBuffer, b);
   strcat(fixedBuffer, " credits added");
-  Serial.println(credits + " credits added");
+  Serial.print(credits); Serial.println(F(" credits added"));
   showMessageOnVFD(fixedBuffer, 0);
   delay(2000);
   showMessageOnVFD(casinoName, 0);
@@ -404,7 +412,7 @@ void writePlayerDataToServer(String cid, int ct, String cn, long pg, long pw, lo
   String playerData = cn + "|" + String(ct) + "|" + String(pg) + "|" + String(pw) + "|" + String(pl) + "|" + String(ptw);
 
   if (client.connect(serverIP, 80)) {
-    Serial.print("Connected to ");
+    Serial.print(F("Connected to "));
     Serial.println(client.remoteIP());
 
     // Make an HTTP request
@@ -412,12 +420,12 @@ void writePlayerDataToServer(String cid, int ct, String cn, long pg, long pw, lo
     client.println("Host: " + sIP);
     client.println("Connection: close");
 
-    Serial.println("Card data uploaded for: " + cid);
+    Serial.print(F("Card data uploaded for: ")); Serial.println(cid);
     client.stop();
     return;
 
   } else {
-    Serial.println("Connection to server failed!");
+    Serial.println(F("Connection to server failed!"));
     showMessageOnVFD("Card Update Failed", 0);
     delay(2000);
   }
@@ -434,8 +442,7 @@ void readPlayerDataFromServer(String cid)
   cardHolder = "";
 
   if (client.connect(serverIP, 80)) {
-    Serial.print("Connected to ");
-    Serial.println(client.remoteIP());
+    Serial.print(F("Connected to ")); Serial.println(client.remoteIP());
 
     // Make an HTTP request
     client.println("GET /?pd=&cardID=" + cid + " HTTP/1.1");
@@ -470,7 +477,7 @@ void readPlayerDataFromServer(String cid)
     if (stringData.indexOf("|") == -1) {
       clearStats();
       client.stop();
-      Serial.println("Unable to get card data for: " + cid);
+      Serial.print(F("Unable to get card data for: ")); Serial.print(cid);
       showMessageOnVFD("Card Load Failed", 0);
       delay(2000);
       return;
@@ -490,12 +497,12 @@ void readPlayerDataFromServer(String cid)
       playerTotalWon = getValue(stringData, '|', 5).toInt();
     }
 
-    Serial.println("Card data downloaded for: " + cid);
+    Serial.print(F("Card data downloaded for: ")); Serial.print(cid);
     client.stop();
     return;
 
   } else {
-    Serial.println("Connection to server failed!");
+    Serial.println(F("Connection to server failed!"));
     showMessageOnVFD("Card Load Failed", 0);
     delay(2000);
   }
@@ -552,7 +559,7 @@ void initEthernet()
 
   // Check for Ethernet hardware present
   if (Ethernet.hardwareStatus() == EthernetNoHardware) {
-    Serial.println("Ethernet shield was not found. Remote Access will be unavailable.");
+    Serial.println(F("Ethernet shield was not found. Remote Access will be unavailable."));
 
     showMessageOnVFD("No Network Found", 0);
     delay(2000);
@@ -579,28 +586,26 @@ void checkEthernet()
   switch (Ethernet.maintain()) {
     case 1:
       // Renewed fail
-      Serial.println("Error: DHCP renewal failed");
+      Serial.println(F("Error: DHCP renewal failed"));
       break;
 
     case 2:
       // Renewed success
-      Serial.println("DHCP Renewed successfully");
-      Serial.print(F("IP address: "));
-      Serial.println(Ethernet.localIP());
+      Serial.println(F("DHCP Renewed successfully"));
+      Serial.print(F("IP address: ")); Serial.println(Ethernet.localIP());
       ip = Ethernet.localIP();
       ipStr = String(ip[0]) + '.' + String(ip[1]) + '.' + String(ip[2]) + '.' + String(ip[3]);
       break;
 
     case 3:
       // Rebind fail
-      Serial.println("Error: Ethernet rebind failed");
+      Serial.println(F("Error: Ethernet rebind failed"));
       break;
 
     case 4:
       // Rebind success
-      Serial.println("Ethernet rebind successful");
-      Serial.print(F("IP address: "));
-      Serial.println(Ethernet.localIP());
+      Serial.println(F("Ethernet rebind successful"));
+      Serial.print(F("IP address: ")); Serial.println(Ethernet.localIP());
       ip = Ethernet.localIP();
       ipStr = String(ip[0]) + '.' + String(ip[1]) + '.' + String(ip[2]) + '.' + String(ip[3]);
       break;
@@ -700,7 +705,7 @@ bool checkForPlayerCard()
           tmp.replace("[CASINONAME]", casinoName);
           tmp.toCharArray(scrollBuffer, tmp.length() + 1);
 
-          Serial.println("Ready for play");
+          Serial.println(F("Ready for play"));
           return true;
         }
 
@@ -1141,20 +1146,35 @@ void generalPoll()
   Serial1.write(0x81);
   UCSR1B = 0b10011100;
 
+  delay(10);  // Found to be necessary on some machines to wait for data on the serial bus
   if (Serial1.available() > 0) Serial1.readBytes(SASEvent, sizeof(SASEvent));
 
-  if (SASEvent[0] != 0x00 && SASEvent[0] != 0x01 && SASEvent[0] != 0x80 && SASEvent[0] != 0x81) {
-    Serial.print("SAS Event Received: "); Serial.print(SASEvent[0], HEX); Serial.println("");
-  }
+  if (SASEvent[0] != 0x1F && SASEvent[0] != 0x00 && SASEvent[0] != 0x01 && SASEvent[0] != 0x80 && SASEvent[0] != 0x81 && SASEvent[0] != 0x7C) {
+    Serial.print(F("SAS Event Received: ")); Serial.print(SASEvent[0], HEX); Serial.print(F(" "));
 
-  // Process these events
-  if (SASEvent[0] == 0x71 & changeToCredits) addCredits(changeCredits); // To enable 'Change button' credits
-  if (SASEvent[0] == 0x72 & changeToCredits) addCredits(changeCredits); // To enable 'Change button' credits
-  if (SASEvent[0] == 0x51) SendHandpay();
-  if (SASEvent[0] == 0x57) SystemValidation();
-  if (SASEvent[0] == 0x3D) CashOutState();
-  if (SASEvent[0] == 0x67) RedeemTicket();
-  if (SASEvent[0] == 0x68) ConfirmRedeem();
+    if (SASEvent[0] == 0x11) Serial.println(F("Game door opened"));
+    if (SASEvent[0] == 0x12) Serial.println(F("Game door closed"));
+    if (SASEvent[0] == 0x17) Serial.println(F("AC power was applied to gaming machine"));
+    if (SASEvent[0] == 0x18) Serial.println(F("AC power was lost from gaming machine"));
+    if (SASEvent[0] == 0x19) Serial.println(F("Cashbox door was opened"));
+    if (SASEvent[0] == 0x1A) Serial.println(F("Cashbox door was closed"));        
+    if (SASEvent[0] == 0x66) Serial.println(F("Cash out button pressed"));
+    if (SASEvent[0] == 0x51) Serial.println(F("Handpay is pending"));
+    if (SASEvent[0] == 0x52) Serial.println(F("Handpay was reset"));
+    if (SASEvent[0] == 0x2B) Serial.println(F("Bill rejected"));
+    if (SASEvent[0] == 0x7E) Serial.println(F("Game started"));
+    if (SASEvent[0] == 0x7F) Serial.println(F("Game ended"));
+
+    // Process/log these events
+    if (SASEvent[0] == 0x71 & changeToCredits) addCredits(changeCredits); // To enable 'Change button' credits
+    if (SASEvent[0] == 0x72 & changeToCredits) addCredits(changeCredits); // To enable 'Change button' credits
+    if (SASEvent[0] == 0x51) getHandpayInfo();
+    if (SASEvent[0] == 0x57) SystemValidation();
+    if (SASEvent[0] == 0x3D) CashOutState();
+    if (SASEvent[0] == 0x67) RedeemTicket();
+    if (SASEvent[0] == 0x68) ConfirmRedeem();
+    Serial.println(F(""));
+  } 
 }
 
 int dec2bcd(byte val)
@@ -1174,12 +1194,12 @@ byte waitForResponse(byte & waitfor, byte * ret, int sz)
   byte responseBytes[sz - 2];
   int wait = 0;
 
-  while (Serial1.read() != waitfor && wait < 1000) {
+  while (Serial1.read() != waitfor && wait < 4000) {
     delay(1);
     wait += 1;
   }
 
-  if (wait >= 1000) {
+  if (wait >= 4000) {
     Serial.println(F("Unable to read data - timeout"));
     memset(ret, 0, sz);
     sasError = true;
@@ -1187,8 +1207,8 @@ byte waitForResponse(byte & waitfor, byte * ret, int sz)
   }
 
   Serial1.readBytes(responseBytes, sizeof(responseBytes));
-  memcpy(ret, {0x01}, 1);
-  memcpy(ret + 1, waitfor, 1);
+  ret[0] = {0x01};
+  ret[1] = waitfor;
   memcpy(ret + 2, responseBytes, sizeof(responseBytes));
 
   return ret;
@@ -1266,31 +1286,57 @@ void changeButtonToCredits(bool e)
 
 void resetHandpay()
 {
-  SendTypeR(HPRES, sizeof(HPRES));
-  Serial1.readBytes(returnStatus, sizeof(returnStatus));
+  SendTypeS(RHP, sizeof(RHP));
+  waitForResponse(RHP[1], COS, sizeof(COS));
   Serial.println(F("Handpay reset"));
+}
+
+void getHandpayInfo()
+{
+  Serial.println(F("Getting handpay information"));
+  SendTypeR(HPI, sizeof(HPI));
+  waitForResponse(HPI[1], HPS, sizeof(HPS));  
 }
 
 void SystemValidation()
 {
+  Serial.println(F("Getting cashout information"));
   SendTypeR(SVNS, sizeof(SVNS));
+  sasError = false;
   waitForResponse(SVNS[1], COT, sizeof(COT));
 
-  SVN [0]  = SASAdr;                    // Adress
-  SVN [1]  = 0x58;                      // Recieve Validation Number
-  SVN [2]  = 0x01;                      // Validation ID
-  SVN [3]  = COT [2];                   // Cashout Type
-  SVN [4]  = 0x00;                      // None
-  SVN [5]  = 0x00;                      // None
-  SVN [6]  = COT [3];                   // Cashout Value Byte5 (MSB)
-  SVN [7]  = COT [4];                   // Cashout Value Byte4
-  SVN [8]  = COT [5];                   // Cashout Value Byte3
-  SVN [9]  = COT [6] ;                  // Cashout Value Byte2
-  SVN [10] = COT [7];                   // Cashout Value Byte1 (LSB)
+  if (!sasError)
+  { 
+    SVN [0] = SASAdr;                    // Adress
+    SVN [1] = 0x58;                      // Receive Validation Number
+    SVN [2] = 0x01;                      // Validation ID
+    SVN [3] = COT [2];                   // Cashout Type
+    SVN [4] = 0x00;                      // None
+    SVN [5] = 0x00;                      // None
+    SVN [6] = COT [3];                   // Cashout Value Byte5 (MSB)
+    SVN [7] = COT [4];                   // Cashout Value Byte4
+    SVN [8] = COT [5];                   // Cashout Value Byte3
+    SVN [9] = COT [6] ;                  // Cashout Value Byte2
+    SVN [10] = COT [7];                  // Cashout Value Byte1 (LSB)
 
-  SendTypeS(SVN, sizeof(SVN));
-  Serial1.readBytes(COS, sizeof(COS));
-  Serial.println(F("Printing cashout ticket"));
+    CalculateCRC(COT, 8);
+    if (CRCH != COT[8] && CRCL != COT[9])
+    {
+      // Bad Validation Data
+      Serial.println(F("Unable to validate - CRC does not match"));
+      SVN [2] = 0x00;
+      SendTypeS(SVN, sizeof(SVN));
+      waitForResponse(SVN[1], COS, sizeof(COS));
+      Serial.println(F("Cashout aborted"));
+    }
+    else
+    {
+      Serial.println(F("Validating cashout request"));
+      SendTypeS(SVN, sizeof(SVN));
+      waitForResponse(SVN[1], COS, sizeof(COS));     
+      Serial.println(F("Printing cashout ticket"));
+    }
+  }
 }
 
 void SetTicketData(String loc, String addr1, String addr2)
@@ -1320,14 +1366,15 @@ void SetTicketData(String loc, String addr1, String addr2)
   memcpy(ticketData + 9 + loc.length() + addr1.length(), bAddr2, addr2.length());
 
   SendTypeS(ticketData, sizeof(ticketData));
-  Serial1.readBytes(TDR, sizeof(TDR));
+  waitForResponse(ticketData[1], TDR, sizeof(TDR));
   Serial.println(F("Updated Cashout Ticket Data"));
 }
 
 void CashOutState()
 {
   SendTypeS(EVInfo, sizeof(EVInfo));
-  Serial1.readBytes(TPS, sizeof(TPS));
+  waitForResponse(EVInfo[1], TPS, sizeof(TPS));
+  Serial.println(F("Cashout ticket has been printed"));
 }
 
 void LegacyBonus (byte SASAdr, byte Amount1, byte Amount2, byte Amount3, byte Amount4, byte Type)
@@ -1346,47 +1393,79 @@ void LegacyBonus (byte SASAdr, byte Amount1, byte Amount2, byte Amount3, byte Am
   Serial1.readBytes(returnStatus, sizeof(returnStatus));
 }
 
-void SendHandpay()
-{
-  SendTypeR(RHP, sizeof(RHP));
-  Serial1.readBytes(HPS, sizeof(HPS));
-}
-
 void RedeemTicket()
 {
+  Serial.println(F("Ticket inserted"));
   SendTypeR(TP, sizeof(TP));
+  Serial.println(F("Waiting for ticket data"));
+  sasError = false;
   waitForResponse(TP[1], TEQ, sizeof(TEQ));
 
-  TRS [0]  =  0x01;                              //' Addres
-  TRS [1]  =  0x71;                              //' Command
-  TRS [2]  =  0x10;                              //' Number of Bytes
-  TRS [3]  =  0x00;                              //' Transfer Code
-  TRS [4]  = TEQ [14];                           //' Ticket Amount BCD1  LSB
-  TRS [5]  = TEQ [15];                           //' Ticket Amount BCD2
-  TRS [6]  = TEQ [16];                           //' Ticket Amount BCD3
-  TRS [7]  = TEQ [17];                           //' Ticket Amount BCD4
-  TRS [8]  = TEQ [18];                           //' Ticket Amount BCD5  MSB
-  TRS [9]  = 0x00;                               //' Parsing Code
-  TRS [10] = TEQ [10];                           //' Validation BCD1
-  TRS [11] = TEQ [11];                           //' Validation BCD2
-  TRS [12] = TEQ [12];                           //' Validation BCD3
-  TRS [13] = TEQ [13];                           //' Validation BCD4
-  TRS [14] = TEQ [14];                           //' Validation BCD5
-  TRS [15] = TEQ [15];                           //' Validation BCD6
-  TRS [16] = TEQ [16];                           //' Validation BCD7
-  TRS [17] = TEQ [17];                           //' Validation BCD8
-  TRS [18] = TEQ [18];                           //' Validation BCD9
-
-  SendTypeS(TRS, sizeof(TRS));
-  Serial1.readBytes(TEQ, sizeof(TEQ));
-  Serial.println(F("Redeeming ticket"));
+  if (!sasError)
+  {  
+    Serial.println(F("Received ticket data"));
+    
+    TRS [0] = 0x01;                              //' Addres
+    TRS [1] = 0x71;                              //' Command
+    TRS [2] = 0x10;                              //' Number of Bytes
+    TRS [3] = 0x00;                              //' Transfer Code
+    TRS [4] = TEQ [14];                          //' Ticket Amount BCD1  LSB
+    TRS [5] = TEQ [15];                          //' Ticket Amount BCD2
+    TRS [6] = TEQ [16];                          //' Ticket Amount BCD3
+    TRS [7] = TEQ [17];                          //' Ticket Amount BCD4
+    TRS [8] = TEQ [18];                          //' Ticket Amount BCD5  MSB
+    TRS [9] = 0x00;                              //' Parsing Code
+    TRS [10] = TEQ [10];                         //' Validation BCD1
+    TRS [11] = TEQ [11];                         //' Validation BCD2
+    TRS [12] = TEQ [12];                         //' Validation BCD3
+    TRS [13] = TEQ [13];                         //' Validation BCD4
+    TRS [14] = TEQ [14];                         //' Validation BCD5
+    TRS [15] = TEQ [15];                         //' Validation BCD6
+    TRS [16] = TEQ [16];                         //' Validation BCD7
+    TRS [17] = TEQ [17];                         //' Validation BCD8
+    TRS [18] = TEQ [18];                         //' Validation BCD9
+  
+    Serial.println(F("Authorizing ticket"));
+    SendTypeS(TRS, sizeof(TRS));  
+    sasError = false;
+    waitForResponse(TRS[1], TEQ, sizeof(TEQ));
+  
+    // Report on common responses
+    if (!sasError)
+    {
+      if (TEQ[3] == 0x00) Serial.println(F("Redeeming ticket"));
+      if (TEQ[3] == 0x40) Serial.println(F("Ticket redemption pending"));
+      if (TEQ[3] == 0x80) Serial.println(F("Ticket rejected"));
+      if (TEQ[3] == 0x81) Serial.println(F("Ticket validation number does not match"));
+      if (TEQ[3] == 0x84) Serial.println(F("Transfer amount exceeded the gaming machine credit limit"));  
+      if (TEQ[3] == 0x85) Serial.println(F("Transfer amount not an even multiple of gaming machine denomination"));  
+      if (TEQ[3] == 0x87) Serial.println(F("Gaming machine unable to accept transfer at this time"));  
+      if (TEQ[3] == 0x88) Serial.println(F("Ticket rejected due to timeout")); 
+      if (TEQ[3] == 0x8B) Serial.println(F("Ticket rejected due to validator failure")); 
+      if (TEQ[3] == 0xFF) Serial.println(F("No validation information available")); 
+    } 
+  }
+  else
+  {
+    Serial.println(F("Ticket data was not received"));
+  } 
 }
 
 void ConfirmRedeem()
 {
   SendTypeR(transComplete, sizeof(transComplete));
-  Serial1.readBytes(TEQ, sizeof(TEQ));
-  Serial.println(F("Ticket redeemed successfully"));
+  waitForResponse(transComplete[1], TEQ, sizeof(TEQ));
+
+  // Report on common responses
+  if (TEQ[3] == 0x00) Serial.println(F("Ticket redeemed successfully"));
+  if (TEQ[3] == 0x80) Serial.println(F("Ticket rejected"));
+  if (TEQ[3] == 0x81) Serial.println(F("Ticket validation number does not match"));
+  if (TEQ[3] == 0x84) Serial.println(F("Transfer amount exceeded the gaming machine credit limit"));  
+  if (TEQ[3] == 0x85) Serial.println(F("Transfer amount not an even multiple of gaming machine denomination"));  
+  if (TEQ[3] == 0x87) Serial.println(F("Gaming machine unable to accept transfer at this time"));  
+  if (TEQ[3] == 0x88) Serial.println(F("Ticket rejected due to timeout")); 
+  if (TEQ[3] == 0x8B) Serial.println(F("Ticket rejected due to validator failure")); 
+  if (TEQ[3] == 0xFF) Serial.println(F("No validation information available"));  
 }
 
 void SendTypeR (byte temp[], int len)
@@ -1405,7 +1484,6 @@ void SendTypeS (byte temp[], int len)
   temp [len - 1] = CRCL;
   UCSR1B = 0b10011101;
   Serial1.write(temp[0]);
-  delay(10);
   UCSR1B = 0b10011100;
 
   for (int i = 1; i < len; i++) Serial1.write(temp[i]);
