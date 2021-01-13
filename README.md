@@ -9,7 +9,7 @@ By Marc Davis (1/11/2021)
   
   Build 20210111 Updates
   
-  - Adds 2 retries to TITO operations to improve responsiveness and relaibility
+  - Adds 2 retries to TITO operations to improve responsiveness and reliability
   
   Build 20210107 Updates
   
