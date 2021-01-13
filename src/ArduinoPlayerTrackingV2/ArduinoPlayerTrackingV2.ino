@@ -1,5 +1,5 @@
 /*
-  Arduino TITO and Player Tracking v2.0.20210107
+  Arduino TITO and Player Tracking v2.0.20210111
   by Marc R. Davis - Copyright (c) 2020-2021 All Rights Reserved
 
   Portions of the Arduino SAS protocol implementation by Ian Walker - Thank you!
@@ -192,7 +192,7 @@ void setup()
   Serial1.setTimeout(200);
   pinMode(LED, OUTPUT);
 
-  Serial.println(F("Arduino TITO and Player Tracking - Version 2.0.20210107 By Marc R. Davis"));
+  Serial.println(F("Arduino TITO and Player Tracking - Version 2.0.20210111 By Marc R. Davis"));
   Serial.println(F("Initializing..."));
 
   // Setup Scrolling Text
@@ -1194,12 +1194,12 @@ byte waitForResponse(byte & waitfor, byte * ret, int sz)
   byte responseBytes[sz - 2];
   int wait = 0;
 
-  while (Serial1.read() != waitfor && wait < 4000) {
+  while (Serial1.read() != waitfor && wait < 3000) {
     delay(1);
     wait += 1;
   }
 
-  if (wait >= 4000) {
+  if (wait >= 3000) {
     Serial.println(F("Unable to read data - timeout"));
     memset(ret, 0, sz);
     sasError = true;
@@ -1300,10 +1300,15 @@ void getHandpayInfo()
 
 void SystemValidation()
 {
+  // Retry up to 2 times
   Serial.println(F("Getting cashout information"));
-  SendTypeR(SVNS, sizeof(SVNS));
-  sasError = false;
-  waitForResponse(SVNS[1], COT, sizeof(COT));
+
+  for (int x = 0; x < 2; x++) {
+    SendTypeR(SVNS, sizeof(SVNS));
+    sasError = false;
+    waitForResponse(SVNS[1], COT, sizeof(COT));
+    if (!sasError) break;
+  }
 
   if (!sasError)
   { 
@@ -1395,12 +1400,17 @@ void LegacyBonus (byte SASAdr, byte Amount1, byte Amount2, byte Amount3, byte Am
 
 void RedeemTicket()
 {
+  // Retry up to 2 times
   Serial.println(F("Ticket inserted"));
-  SendTypeR(TP, sizeof(TP));
-  Serial.println(F("Waiting for ticket data"));
-  sasError = false;
-  waitForResponse(TP[1], TEQ, sizeof(TEQ));
-
+  
+  for (int x = 0; x < 2; x++) {
+    SendTypeR(TP, sizeof(TP));
+    Serial.println(F("Waiting for ticket data"));
+    sasError = false;
+    waitForResponse(TP[1], TEQ, sizeof(TEQ));
+    if (!sasError) break;
+  }
+  
   if (!sasError)
   {  
     Serial.println(F("Received ticket data"));
