@@ -7,6 +7,12 @@ By Marc Davis (1/11/2021)
   outside of casinos. This replaces the Bally MasterCom device. The project can now
   communicate directly with SAS-enabled machines for remote control, TITO and metering.
   
+  Build 20210125 Updates
+  
+  - Adds support for DataVision DV-16236 or equivalent LCDs
+  - Fixes some messages so they will display properly on 16x2 displays
+  - Fixed a typo in the config.txt sample file
+  
   Build 20210111 Updates
   
   - Adds 2 retries to TITO operations to improve responsiveness and reliability
