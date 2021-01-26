@@ -1,5 +1,5 @@
 /*
-  Arduino TITO and Player Tracking v2.0.20210111
+  Arduino TITO and Player Tracking v2.0.20210125
   by Marc R. Davis - Copyright (c) 2020-2021 All Rights Reserved
 
   Portions of the Arduino SAS protocol implementation by Ian Walker - Thank you!
@@ -154,9 +154,11 @@ byte TDR [5];
 // Setup instances
 // ------------------------------------------------------------------------------------------------------------
 
+// For VFD
 IeeFlipNoFrills vfd(22, 23, /*control pins */
                     31, 30, 29, 28, 27, 26, 25, 24 /*data pins */);
 
+// For LCD - 22 = RS, 23 = Enable, 24 = DB7, 25 = DB6, 26 = DB5, 27 = DB4
 // LiquidCrystal vfd(22, 23, 27, 26, 25, 24);  // Enable this for LCDs and Disable IeeFlipNoFrills above
                     
 MFRC522 mfrc522(SS_PIN, RST_PIN); // Create MFRC522 instance.
@@ -192,7 +194,7 @@ void setup()
   Serial1.setTimeout(200);
   pinMode(LED, OUTPUT);
 
-  Serial.println(F("Arduino TITO and Player Tracking - Version 2.0.20210111 By Marc R. Davis"));
+  Serial.println(F("Arduino TITO and Player Tracking - Version 2.0.20210125 By Marc R. Davis"));
   Serial.println(F("Initializing..."));
 
   // Setup Scrolling Text
@@ -426,7 +428,7 @@ void writePlayerDataToServer(String cid, int ct, String cn, long pg, long pw, lo
 
   } else {
     Serial.println(F("Connection to server failed!"));
-    showMessageOnVFD("Card Update Failed", 0);
+    showMessageOnVFD("Card Update Fail", 0);
     delay(2000);
   }
 
@@ -478,7 +480,7 @@ void readPlayerDataFromServer(String cid)
       clearStats();
       client.stop();
       Serial.print(F("Unable to get card data for: ")); Serial.print(cid);
-      showMessageOnVFD("Card Load Failed", 0);
+      showMessageOnVFD("Card Load Fail", 0);
       delay(2000);
       return;
     }
@@ -503,7 +505,7 @@ void readPlayerDataFromServer(String cid)
 
   } else {
     Serial.println(F("Connection to server failed!"));
-    showMessageOnVFD("Card Load Failed", 0);
+    showMessageOnVFD("Card Load Fail", 0);
     delay(2000);
   }
 }
@@ -539,7 +541,7 @@ void writePlayerDataToSD(String filename, int ct, String cn, long pg, long pw, l
   {
     // If the file didn't open, print an error
     Serial.println(F("Error writing player data"));
-    showMessageOnVFD("Card Update Failed", 0);
+    showMessageOnVFD("Card Update Fail", 0);
     delay(2000);
   }
 }
@@ -561,7 +563,7 @@ void initEthernet()
   if (Ethernet.hardwareStatus() == EthernetNoHardware) {
     Serial.println(F("Ethernet shield was not found. Remote Access will be unavailable."));
 
-    showMessageOnVFD("No Network Found", 0);
+    showMessageOnVFD("No Network", 0);
     delay(2000);
     return;
   }
@@ -571,7 +573,7 @@ void initEthernet()
   ip = Ethernet.localIP();
   ipStr = String(ip[0]) + '.' + String(ip[1]) + '.' + String(ip[2]) + '.' + String(ip[3]);
 
-  showMessageOnVFD("Network Connected", 0);
+  showMessageOnVFD("Net Connected", 0);
   showMessageOnVFD(ipStr.c_str(), 1);
   delay(2000);
 
@@ -991,7 +993,7 @@ void htmlPoll()
 
         client.print(htmlHeader);
         client.print("<head><meta name='viewport' content='initial-scale=1.0'><style>body {font-family: Tahoma;}</style></head><body><h2>GAME STATISTICS</h2><br>");
-        client.print("Credits<br>" + String(Credits) + "<br>Total In<br>" + String(totalIn) + "<br>Total Won<br>" + String(totalWon) + "<br>Total Games<br>" + String(totalGames) + "<br>Games Won<br>" + String(gamesWon) + "<br>gamesLost<br>" + String(gamesLost) + "<br>");
+        client.print("Credits<br>" + String(Credits) + "<br>Total In<br>" + String(totalIn) + "<br>Total Won<br>" + String(totalWon) + "<br>Total Games<br>" + String(totalGames) + "<br>Games Won<br>" + String(gamesWon) + "<br>Games Lost<br>" + String(gamesLost) + "<br>");
         client.print("</body>");
         client.print(htmlFooter);
 
@@ -1045,7 +1047,7 @@ void htmlPoll()
         String address2 = urlDecode(getValue(getValue(querystring, '&', 2), '=', 1));
 
         SetTicketData(location, address1, address2);
-        showMessageOnVFD("Ticket Data Updated", 0);
+        showMessageOnVFD("Ticket Updated", 0);
         delay(2000);
       }
 
