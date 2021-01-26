@@ -11,6 +11,6 @@ ipAddress=
 serverIPAddress=
 gameName=Slot Machine
 casinoName=The CASINO
-scrollingText=Welcome to [CASINONAME]! Enjoy your stay!                    Please insert your Player Card"
+scrollingText=Welcome to [CASINONAME]! Enjoy your stay!                    Please insert your Player Card
 playerMessage=Welcome back [CARDHOLDER]! Enjoy your stay in [CASINONAME]!
 
