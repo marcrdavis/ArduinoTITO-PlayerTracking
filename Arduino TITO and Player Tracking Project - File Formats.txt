@@ -5,10 +5,14 @@ PLAYER AND CONFIG FILE FORMATS
 
 NOTE! THE FILE FORMAT HAS CHANGED SLIGHTLY FROM VERSION 1.0 - YOU WILL NEED TO MAKE CHANGES TO THE PROPERTY NAMES IF UPGRADING.
 
+When upgrading - be sure to update your config.txt file with new parameters below.
+
 The config file is a standard .TXT file in a ‘property=value’ format. A default file is included in the download. Property names are CASE SENSITIVE. It has the following properties:
 
-displayWidth=20  <- The width of your character display (columns)
-displayHeight=2  <- The height of your character display (rows)
+displayWidth=20  <- The width of your display (columns or pixels - depending on display)
+displayHeight=2  <- The height of your character display (rows or pixels - depending on display)
+displayCols=20   <- New in 2.0.20210129; used to set number of characters per row (for pixel displays; otherwise set to match displayWidth)
+displayRows=2    <- New in 2.0.20210129; used to set number of character rows (for pixel displays; otherwise set to match displayHeight)
 scrollDelay=110  <- The scroll delay, in ms
 logToSerial=1  <- Set to 1 to log output to the serial device, 0 to prevent logging
 localStorage=1  <- Set to 1 to store data to the local SD card; Set to 0 to when data is stored on another device
@@ -23,7 +27,7 @@ casinoName=The CASINO  <- The name of your casino which will appear on the displ
 ScrollingText=Welcome to the [CASINONAME]! Enjoy your stay! Please insert your Player Card
 playerMessage=Welcome back [CARDHOLDER]! Enjoy your stay in [CASINONAME]
 
-[CARDHOLDER] is a variable you can use in the playerMessage to show the Cardholder’s name. Messages cannot exceed 256 characters.
+[CARDHOLDER] is a variable you can use in the playerMessage to show the Cardholder’s name. Messages cannot exceed 255 characters.
 [CASINONAME] is a variable you can use in the scrollingText or playerMessage to show the Casino Name.
 
 Scrolling messages have a length of 255 characters; Text fields have a length of 30 characters - except for the casinoName field which has a max length equal to the display width or 30 characters - whichever is less. All other fields are boolean or integer.
