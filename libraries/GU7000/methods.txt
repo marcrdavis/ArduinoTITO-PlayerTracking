@@ -1,0 +1,837 @@
+****************************************************************
+                Noritake_VFD_GU7000 CLASS METHODS
+****************************************************************
+
+YOU MUST AGREE THIS TERMS AND CONDITIONS. THIS SOFTWARE IS
+PROVIDED BY NORITAKE CO., INC "AS IS" AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR SORT (INCLUDING NEGLIGENCE OR
+OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+****************************************************************
+                           BY TOPIC
+****************************************************************
+
+Movement Commands
+    void GU7000_back();
+    void GU7000_forward();
+    void GU7000_lineFeed();
+    void GU7000_home();
+    void GU7000_carriageReturn();
+    void GU7000_setCursor(unsigned x, unsigned y);
+Printing Commands
+    void print(char c);
+    void print(const char *buffer, size_t size);
+    void print(const char *str);
+    void print(int number, int base);
+    void print(long number, int base);
+    void print(unsigned number, int base);
+    void print(unsigned long number, int base);
+    void println(char c);
+    void println(const char *buffer, size_t size);
+    void println(const char *str);
+    void println(int number, int base);
+    void println(long number, int base);
+    void println(unsigned number, int base);
+    void println(unsigned long number, int base);
+Character / Font Commands
+    void GU7000_cursorOff();
+    void GU7000_cursorOn();
+    void GU7000_useMultibyteChars(bool enable);
+    void GU7000_setMultibyteCharset(uint8_t code);
+    void GU7000_useCustomChars(bool enable);
+    void GU7000_defineCustomChar(uint8_t code, uint8_t format, const uint8_t *data);
+    void GU7000_deleteCustomChar(uint8_t code);
+    void GU7000_setAsciiVariant(uint8_t code);
+    void GU7000_setCharset(uint8_t code);
+    void GU7000_setFontSize(uint8_t x, uint8_t y, bool tall);
+    void GU7000_setFontStyle(bool proportional, bool evenSpacing);
+Module Operation Commands
+    void GU7000_init();
+    void GU7000_reset();
+    void GU7000_wait(uint8_t time);
+Drawing Commands
+    void GU7000_drawImage(unsigned width, uint8_t height, const uint8_t *data);
+    void GU7000_drawFROMImage(unsigned long address, uint8_t srcHeight, unsigned width, uint8_t height);
+    void GU7000_fillRect(unsigned x0, unsigned y0, unsigned x1, unsigned y1, bool on=true);
+Display / Window Commands
+    void GU7000_clearScreen();
+    void GU7000_setScrollMode(uint8_t mode);
+    void GU7000_setHorizScrollSpeed(uint8_t speed);
+    void GU7000_invertOff();
+    void GU7000_invertOn();
+    void GU7000_setCompositionMode(uint8_t mode);
+    void GU7000_setScreenBrightness(int level);
+    void GU7000_scrollScreen(unsigned x, unsigned y, unsigned count, uint8_t speed);
+    void GU7000_blinkScreen();
+    void GU7000_blinkScreen(bool enable, bool reverse, uint8_t onTime, uint8_t offTime, uint8_t times);
+    void GU7000_displayOff();
+    void GU7000_displayOn();
+    void GU7000_screenSaver(uint8_t mode);
+    void GU7000_selectWindow(uint8_t window);
+    void GU7000_defineWindow(uint8_t window, unsigned x, unsigned y, unsigned width, unsigned height);
+    void GU7000_deleteWindow(uint8_t window);
+    void GU7000_joinScreens();
+    void GU7000_separateScreens();
+    void GU7000_setBacklightColor(uint8_t r, uint8_t g, uint8_t b);
+    void GU7000_setBacklightColor(unsigned rgb);
+
+****************************************************************
+                           GLOSSARY
+****************************************************************
+
+ASCII Variant: National variations of ASCII that change the
+        graphical representation of certain ASCII characters
+        to be used for national characters such as currency
+        signs.
+
+Custom Characters: Custom characters can be defined to change
+        the graphical representation of ASCII characters between
+        0x20 and 0xFF. There are two types of custom characters:
+        those stored in RAM and those stored in FROM.
+        
+        Characters stored in RAM will be erased after a reset
+        or initialization. Each of the 16 RAM characters can
+        be individually assigned to an ASCII character code,
+        deleted, and changed.
+        
+        Characters stored in FROM are not erased after a
+        reset or initialization. This can be used to permanently
+        store character sets. All 224 characters must be stored
+        and used at once. FROM is only available on -79**
+        models.
+        
+        Custom characters are also called User-Defined Fonts.
+
+FROM:  Flash ROM on the VFD module that is used to store
+        character data. Unlike custom character RAM, this memory
+        is not cleared after a reset or initialization.
+
+Home Position: the top left position on the display (0,0).
+
+Hidden Screen Area: Modules may have more display memory than
+        the amount required to display the visible screen area.
+        With scrolling, this memory can be used to do scrolling
+        animation or flip between two different screens if the
+        module has enough memory. Dots drawn to the hidden
+        screen area are not shown until that dot is scrolled
+        into the visible screen area. See also Visible Screen
+        Area.
+
+Visible Screen Area: The visible screen area is the area of the
+        screen that is currently being displayed on the module.
+        The ends of this area can be changed by scrolling the
+        screen. By default, this area starts from the top-left
+        position on the display (0,0). See also Hidden Screen
+        Area.
+
+****************************************************************
+                          METHOD INDEX
+****************************************************************
+
+----------------------------------------------------------------
+void GU7000_back();
+Move the cursor left one fixed-width character. The cursor goes
+to the end of the previous line if the cursor is within one
+fixed-width character of the beginning of a line. This command is
+ignored if the cursor is within one fixed-width character of
+home position, the command is ignored.
+
+----------------------------------------------------------------
+void GU7000_blinkScreen();
+This command stops the screen from blinking because of a
+previous call to GU7000_blinkScreen(). This command may be used
+after GU7000_blinkScreen(bool,uint8_t,uint8_t,uint8_t).
+
+----------------------------------------------------------------
+GU7000_blinkScreen(bool enable, bool reverse, uint8_t onTime, uint8_t offTime, uint8_t times);
+Causes the screen to blink.
+
+enable:  true enables screen blinking
+    false disables screen blinking including ones already
+    in progress.
+reverse: true inverts the screen instead of blanking for offTime
+onTime:  the time the display is on per cycle in 1.35ms units
+offTime: the time the display is off per cycle in 1.35ms units
+times:   the number of times to blink the screen.
+    0 Causes the screen to blink until this method is called
+    again or an initialization or reset is issued.
+
+----------------------------------------------------------------
+void GU7000_carriageReturn();
+Moves the cursor to left-most dot of the current line.
+
+----------------------------------------------------------------
+void GU7000_clearScreen();
+Turns off all of the dots on the screen and moves the cursor
+to the home position.
+
+----------------------------------------------------------------
+void GU7000_cursorOff();
+Turn the cursor off.
+
+----------------------------------------------------------------
+void GU7000_cursorOn();
+Turn the cursor on.
+
+----------------------------------------------------------------
+void GU7000_defineCustomChar(uint8_t code, uint8_t format, const uint8_t *data);
+Define a custom character. If a custom character has already
+been defined with the same character number, the previous one
+is overwritten. Only sixteen custom characters may be defined
+at once. To display custom characters, they must be enabled with
+GU7000_enableCustomChars(). Redefining a custom character will
+not change the appearance of the characters already printed on
+the screen. Custom characters will be erased after
+initialization, a reset, or when power is lost.
+
+Example
+        uint8_t data[] = {
+                0b11111,
+                0b10001,
+                0b10001,
+                0b10001,
+                0b10001,
+                0b10001,
+                0b11111 };
+        // Replace the space character (0x20) with a 5×8 box.
+        vfd.GU7000_useCustomChars(true);
+        vfd.GU7000_defineCustomChar(0x20, LCDFormat, data);
+        vfd.print((char)0x20);
+
+code:   character code to redefine (0x20-0xFF)
+format: the bitmap format data uses
+        one of: CUUFormat, GU70005x7Format, or GU70007x8Format.
+    
+        Dot Layout
+        
+        --> Horizontal
+        V   A1 B1 C1 D1 E1 F1 G1
+        e   A2 B2 C2 D2 E2 F2 G2
+        r   A3 B3 C3 D3 E3 F3 G3
+        t   A4 B4 C4 D4 E4 F4 G4
+        i   A5 B5 C5 D5 E5 F5 G5
+        c   A6 B6 C6 D6 E6 F6 G6
+        a   A7 B7 C7 D7 E7 F7 G7
+        l   A8 B8 C8 D8 E8 F8 G8
+    
+    CUUFormat (5×7 format; column F & G are not used)
+        
+        Byte   Bit4  Bit3 Bit2 Bit1 Bit0
+        1st     A1    B1   C1   D1   E1
+        2st     A2    B2   C2   D2   E2
+        3rd     A3    B3   C3   D3   E3
+        4th     A4    B4   C4   D4   E4
+        5th     A5    B5   C5   D5   E5
+        6th     A6    B6   C6   D6   E6
+        7th     A7    B7   C7   D7   E7
+    
+    GU70005x7Format (5×7 format; column F & G are not used)
+                Byte0 Byte1 Byte2 Byte3 Byte4
+        Bit7      A1   B1    C1    D1    E1
+        Bit6      A2   B2    C2    D2    E2
+        Bit6      A3   B3    C3    D3    E3
+        Bit6      A4   B4    C4    D4    E4
+        Bit7      A5   B5    C5    D5    E5
+        Bit6      A6   B6    C6    D6    E6
+        Bit1      A7   B7    C7    D7    E7
+        Bit0      x    x     x     x     x 
+
+    GU70007x8Format (7×8 format)
+                Byte0 Byte1 Byte2 Byte3 Byte4 Byte5 Byte6
+        Bit7      A1   B1    C1    D1    E1    F1    G1
+        Bit6      A2   B2    C2    D2    E2    F2    G2
+        Bit6      A3   B3    C3    D3    E3    F3    G3
+        Bit6      A4   B4    C4    D4    E4    F4    G4
+        Bit7      A5   B5    C5    D5    E5    F5    G5
+        Bit6      A6   B6    C6    D6    E6    F6    G6
+        Bit1      A7   B7    C7    D7    E7    F7    G7
+        Bit0      A8   B8    C8    D8    E8    F8    G8
+    
+data:   data in the format defined above.
+
+----------------------------------------------------------------
+void GU7000_defineWindow(uint8_t window, unsigned x, unsigned y, unsigned width, unsigned height);
+Define a window on the screen. When a window is selected with
+GU7000_selectWindow(), text is wrapped to fit in the window and
+graphics are clipped so that no write may occur outside of the
+window. If the window was previously defined, the window will be
+resized. This function does not select the defined window.
+
+window: 1-4 for user-defined windows 1 to 4.
+x:      the x coordinate of the upper-left corner of window
+y:      the y coordinate of the upper-left corner of window
+width:  width of the window
+height: height of the window
+
+----------------------------------------------------------------
+void GU7000_deleteCustomChar(uint8_t code);
+Delete a custom character. If the code has not been used to
+define a custom character, then the command is ignored.
+
+code:   the ASCII character code of the custom character to
+    delete (0x20-0xFF)
+
+----------------------------------------------------------------
+void GU7000_deleteWindow(uint8_t window);
+Delete a previously defined window on the screen. If the window
+was not defined, the command is ignored. Window 0 cannot be
+deleted.
+
+window: 1-4 for user-defined windows 1 to 4.
+
+----------------------------------------------------------------
+void GU7000_displayOff();
+Turn off the display. Turning off the display sends the module
+into a low power mode consuming less power than turning all dots
+off. Commands will still be executed by the module but the
+results will not be visible until GU7000_displayOn() is executed.
+
+----------------------------------------------------------------
+void GU7000_displayOn();
+Turn on the display after turning it off with GU7000_displayOff().
+
+----------------------------------------------------------------
+void GU7000_drawFROMImage(unsigned long address, uint8_t srcHeight, unsigned width, uint8_t height);
+Draw an image from FROM to the screen at the current cursor
+position. The cursor is not moved after this command. You may
+draw part of a bitmap by specifying a width and height less than
+the width of the actual bitmap in FROM. srcHeight must always
+be set to the height of the actual bitmap in FROM. See
+GU7000_showImage() for image format details. Heights must be
+divisible by 8; they are rounded down otherwise. This command
+is only available on the -79** models.
+
+address:   address in FROM 0-0x7FFFF
+srcHeight: total height of image
+width:     width of bitmap to display
+height:    height of bitmap to display (may be less than srcHeight)
+
+----------------------------------------------------------------
+void GU7000_drawImage(unsigned width, uint8_t height, const uint8_t *data);
+Draw an image in data to the screen at the current cursor
+position. The cursor is not moved after this command. You may
+draw part of a bitmap by specifying a width less than the actual
+image width in data. The height must always match. Height must
+be divisible by 8; it is rounded down otherwise.
+
+width:  width of bitmap to display
+height: height of bitmap to display
+data:   image data in the format:
+    Dots are packed into a byte in an 8-dot column.
+    The lowest bit (bit 0) is the top dot.
+    The 8-dot bytes form a column that is the total height of
+      the bitmap.
+    
+    Example:
+      A 3×16 image would be defined with the 6 bytes: A-F.
+      A0, B0, etc. indicates bit 0 of byte A.
+      
+        A0 C0 E0
+        A1 C1 E1
+        A2 C2 E2
+        A3 C3 E3
+        A4 C4 E4
+        A5 C5 E5
+        A6 C6 E6
+        A7 C7 E7
+        B0 D0 F0
+        B1 D1 F1
+        B2 D2 F2
+        B3 D3 F3
+        B4 D4 F4
+        B5 D5 F5
+        B6 D6 F6
+        B7 D7 F7
+
+----------------------------------------------------------------
+void GU7000_fillRect(unsigned x0, unsigned y0, unsigned x1, unsigned y1, bool on=true);
+Fill a rectangle. Areas of the rectangle that are outside of the
+window will be clipped. The currently selected composition mode
+will be used to set the dots. Since a buffer 8*(y1-y0) bytes
+in length is allocated from the stack, calling this method from
+deeply nested functions may cause a stack overflow and corrupt
+data.
+
+x0:  the x coordinate of the upper-left corner of window
+y0:  the y coordinate of the upper-left corner of window
+x1:  the x coordinate of the bottom-right corner of window
+y1:  the y coordinate of the bottom-right corner of window
+
+----------------------------------------------------------------
+void GU7000_forward();
+Move the cursor right one fixed-width character. The cursor goes
+to the beginning of the next line if was within one fixed-width
+character of the end of the line. If the row was the last, in
+wrapping mode, the cursor will return to the home position. In
+vertical mode, the display shifts up one line as described in
+GU7000_lineFeed(). In horizontal scroll mode, moving forward after
+the end of any line causes that line to scroll horizontally.
+
+----------------------------------------------------------------
+void GU7000_home();
+Move the cursor to the top left corner of the screen: (0,0).
+
+----------------------------------------------------------------
+void GU7000_init();
+Send the initialization command returning the module to its
+initial state:
+    Cursor                      Disabled, Home Position
+    Multi-Byte Character Set    Disabled, Korean
+    Custom Characters           Disabled, None Defined
+    ASCII Variant               0
+    Character Set               0
+    Scroll Mode                 Wrapping Mode
+    Horizontal Scroll Speed     0
+    Invert                      Disabled
+    Composition Mode            Normal
+    Screen Brightness           100%
+    Display                     Enabled
+    Screen Saver                None
+    Font Style                  Fixed, Uneven Spacing
+    Font Size                   1×1
+    Window                      0
+    Screens Relationship        Separate
+
+----------------------------------------------------------------
+void GU7000_invertOff();
+Draw dots normally (not inverted). Only dots drawn after this
+command will be affected. Previously draw dots will not change.
+See also GU7000_invertOn().
+
+----------------------------------------------------------------
+void GU7000_invertOn();
+Draw dots to the screen in the opposite state that they were
+specified in. Lit dots are drawn unlit and dots that were
+specified unlit are drawn lit. Turning off invert mode does not
+alter dots already on the screen. For example, when drawing the
+character "o" to the screen with inversion on, the ring of the
+character will not be lit and the inside and outside will be
+lit. Only dots drawn after this command will be affected.
+Previously draw dots will not change.
+
+----------------------------------------------------------------
+void GU7000_joinScreens();
+Join the visible and hidden screen areas. When joined, text will
+wrap only at the right edge of the hidden screen area regardless
+of which screen the cursor started in. This mode is not enabled
+by default. To separate the screens, use GU7000_separateScreens().
+
+----------------------------------------------------------------
+void GU7000_lineFeed();
+Move the cursor down one line. The column remains the same.
+When the cursor is on the bottom line in wrapping mode, the
+cursor moves to the home position. In vertical scroll mode, a
+linefeed causes the display to shift up one line without moving
+the cursor. The contents of the top line are lost and the bottom
+line is filled with space characters (0x20). In horizontal
+scrolling mode, linefeed is ignored.
+
+----------------------------------------------------------------
+void GU7000_reset();
+Perform a hardware reset on the display. Not every interface
+supports this method. Please consult the target module's
+spec to determine if the module has a reset pin.
+
+You can find the spec for Noritake GU-7000 VFD module at
+http://www.noritake-elec.com/7000.htm
+
+----------------------------------------------------------------
+void GU7000_screenSaver(uint8_t mode);
+Set the screen saver.
+
+mode:
+    0x02 or AllDotsOffSaver
+        Turn all dots on the display off
+    0x03 or AllDotsOnSaver
+        Turn all dots on the display on
+
+----------------------------------------------------------------
+void GU7000_scrollScreen(unsigned x, unsigned y, unsigned count, uint8_t speed);
+Scroll the screen left. The screen will move by (x,y) each step.
+Count specifies the number of steps. Speed determines the delay
+between steps. At the end of the operation, the display will
+have moved by (x*count, y*count) and taken count*speed*14ms.
+
+x:     the number of dots to scroll horizontally each step
+y:     the number of dots to scroll vertically each step
+count: the number of times to move
+speed: delay time between steps in 14ms units (0-255 * 14ms)
+
+----------------------------------------------------------------
+void GU7000_selectWindow(uint8_t window);
+Select the current window. The window controls where graphic and
+text operations are allowed to write. Text is wrapped to fit the
+window. Window 0 is special and specifies the entire screen.
+GU7000_enableIndependentScreenMode() specifies the boundaries of
+the window. Windows 1 to 4 are user-defined windows and must be
+defined with GU7000_defineWindow().
+
+window: 0-4 for windows 0 to 4.
+
+----------------------------------------------------------------
+void GU7000_separateScreens();
+Separating the visible and hidden screen areas causes text to
+wrap around at the edge of the visible screen (or the hidden
+screen area if the cursor was in the hidden screen before the
+print operation). This mode is the default. To join the screens,
+use GU7000_joinScreens().
+
+----------------------------------------------------------------
+void GU7000_setAsciiVariant(uint8_t code);
+Select which national variant of ASCII will be used.
+This setting affects the appearance of characters: 0x23, 0x24,
+0x40, 0x5B, 0x5C, 0x5D, 0x5E, 0x60, 0x7B, 0x7C, 0x7D, 0x7E.
+See the target module's specification for the appearance of
+those characters in the given variant.
+
+code:
+    0x00    America (default)
+    0x01    France
+    0x02    Germany
+    0x03    England
+    0x04    Denmark 1
+    0x05    Sweden
+    0x06    Italy
+    0x07    Spain 1
+    0x08    Japan
+    0x09    Norway
+    0x0A    Denmark 2
+    0x0B    Spain 2
+    0x0C    Latin America
+    0x0D    Korea
+
+----------------------------------------------------------------
+void GU7000_setBacklightColor(uint8_t r, uint8_t g, uint8_t b);
+Set the color of the LED backlight. Only the GU********-7040A
+model supports this feature.
+
+r: 0-255 (0x00-0xFF) red value
+g: 0-255 (0x00-0xFF) green value
+b: 0-255 (0x00-0xFF) blue value
+
+----------------------------------------------------------------
+void GU7000_setBacklightColor(unsigned rgb);
+Set the color of the LED backlight. Only the GU********-7040A
+model supports this feature.
+
+rgb: color value
+    red (bits 8-12)
+    green (bits 4-8)
+    blue values (bits 0-3)
+
+----------------------------------------------------------------
+void GU7000_setCharset(uint8_t code);
+Set the character set of characters printed to the screen. Only
+characters printed after this command will be affected.
+Previously printed characters will not be changed. This command
+changes characters 0x80-0xFF. See also GU7000_setAsciiVariant().
+See the target module's specification for the appearance of
+those characters in the given character set. Custom characters
+defined in the range of 0x80-0xFF will still be shown regardless
+of which character set is in use as long as custom characters
+are enabled with GU7000_useCustomChars().
+This command only affects the single-byte character set. Set the
+multi-byte character set with GU7000_setMultibyteCharset().
+
+code:
+    0x00    PC437 (USA - Euro std) (default)
+    0x01    Katakana - Japanese
+    0x02    PC850 (Multilingual)
+    0x03    PC860 (Portuguese)
+    0x04    PC863 (Canadian-French)
+    0x05    PC865 (Nordic)
+    0x10    WPC1252
+    0x11    PC866 (Cyrillic #2)
+    0x12    PC852 (Latin 2)
+    0x13    PC858
+    0xFF    FROM
+
+----------------------------------------------------------------
+void GU7000_setCompositionMode(uint8_t mode);
+Set the method that is used to set new dots on the screen for
+text and graphics. To avoid unexpected results, please note that
+dots written in vertical groups of 8 not one-by-one. 
+
+mode:
+    0x00 NormalCompositionMode
+        The dots to be written are copied exactly.
+    0x01 OrCompositionMode
+        Any dots set in the source dots are turned on.
+        Any dots already set on the display remain on.
+    0x02 AndCompositionMode
+        Only dots that are set in corresponding positions in
+        the source and display are enabled.
+    0x03 XorCompositionMode
+        Only dots that are set in the source or display but
+        not both are enabled. Dots that are set in neither
+        are turned off on the display.    
+
+----------------------------------------------------------------
+void GU7000_setCursor(unsigned x, unsigned y);
+Move the cursor to the given dot. The command is ignored if
+either of the x or y coordinates are beyond the hidden screen
+area. Dots are numbered from (0,0), the top left of the
+screen to the bottom right. Y coordinate is rounded down to the
+next dot divisible by 8. This command allows you to move the
+cursor into the hidden screen area. See the definitions of
+Visible Screen Area and Hidden Screen Area
+
+x: x coordinate
+y: y coordinate
+
+----------------------------------------------------------------
+void GU7000_setFontSize(uint8_t x, uint8_t y, bool tall);
+Set the size of characters printed to the screen. Only
+characters printed after this command will be affected.
+Previously printed characters will not change. This does not
+affect the font style.
+
+x:    1-4 for 1×, 2×, 3×, and 4× normal width
+y:    1-2 for 1×, and 2×
+tall: true selects the 8×16 font; false selects the 5×7 font.
+    The 8×16 font must be selected to use multi-byte characters.
+    (This is only available on -79** models)
+
+----------------------------------------------------------------
+void GU7000_setFontStyle(bool proportional, bool evenSpacing);
+Set the style of characters printed to the screen. Only
+characters printed after this command will be affected.
+Previously printed characters will not change. This does not
+affect the font size.
+
+proportional: true=variable width font
+              false=fixed width font
+evenSpacing:  true=use an extra dot on the left
+              false=no extra dot is used on the left
+
+----------------------------------------------------------------
+void GU7000_setHorizScrollSpeed(uint8_t speed);
+Set the speed at which the display scrolls in horizontal
+scrolling mode. The exact time unit used by this command depends
+on the module. See the target module's spec.
+
+You can find the spec for Noritake GU-7000 VFD module at
+http://www.noritake-elec.com/7000.htm
+
+time:   0       scroll by character
+        1       T ms / 2 dot
+        2-31    (speed-1)*T ms/dot
+
+----------------------------------------------------------------
+void GU7000_setMultibyteCharset(uint8_t code);
+Set which multi-byte character set is used. Multi-byte character
+sets must first be enabled with GU7000_enableMultibyteCharMode().
+Multi-byte characters can only be printed when the tall (8×16)
+font is selected with GU7000_setFontSize(). This is only available
+on -79** models.
+
+code:
+    0x00    Japanese            JIS X 0208 (Shift-JIS)
+    0x01    Korean              KSC5601-87
+    0x02    Simplified Chinese  GB2312-80
+    0x03    Traditional Chinese Big-5
+
+----------------------------------------------------------------
+void GU7000_setScreenBrightness(int level);
+Set the display brightness. The maximum value is determined by
+the target module. Giving the level 0% will cause the display
+to turn off by calling GU7000_displayOff().
+
+level:  brightness level in percent (0-100%).
+    The default brightness level is 100%
+
+----------------------------------------------------------------
+void GU7000_setScrollMode(uint8_t mode);
+Set the scroll mode of the display.
+
+mode:
+    0x01 or WrappingMode
+        Normal mode. The cursor wraps around at the
+        edges of lines and from the end of the display
+        to the top.
+    0x02 or VertScrollMode
+        Advancing past the last line shifts the text
+        on the screen up and fills the last line of the
+        screen with space characters (0x20). This otherwise
+        acts as wrapping mode.
+    0x03 or HorizScrollMode
+        Advancing past the end of a line shifts
+        text leftwards on the cursor line and prints a space at
+        the end of the line. Scrolling speed is affected by
+        GU7000_setHorizScrollSpeed().
+
+----------------------------------------------------------------
+void GU7000_useCustomChars(bool enable);
+Enable or disable custom characters. You must enable custom
+characters before attempting to create, delete, or use them.
+Disabling custom characters does not delete characters already
+created nor does it redraw custom characters already printed to
+the screen. See GU7000_defineCustomChar() for an example of how
+to use and define custom characters.
+
+enable: true enables custom characters
+        false disables custom characters
+
+----------------------------------------------------------------
+void GU7000_useMultibyteChars(bool enable);
+Enable multi-byte character sets. Once multi-byte mode has been
+enabled, you must select the character set to use with
+GU7000_setMultibyteCharset(). Multi-byte characters may only be
+printed when the tall (8×16) font is selected with
+GU7000_setFontSize(). The multi-byte character set will not be
+reset by disabling multi-byte mode. This is only available on
+-79** models.
+
+enable: true enables multi-byte character sets
+        false disables multi-byte character sets
+
+----------------------------------------------------------------
+void GU7000_wait(uint8_t time);
+Delay executing commands for the given time period. During this
+time, commands are not executed.
+
+time:   time to stall in 0.5s units (0-255 for 0 to 2.125 min)
+
+----------------------------------------------------------------
+void print(char data);
+Overwrite the character under the cursor with a character.
+
+data: character to print
+
+----------------------------------------------------------------
+void print(const char *str);
+Print each character in the string according to print(char).
+
+str: string to print
+
+----------------------------------------------------------------
+void print(const char *buffer, size_t size);
+Print each character in the buffer according to print(char).
+
+buffer: buffer to print
+size:   number of bytes in the buffer
+
+----------------------------------------------------------------
+void print(int number, int base);
+Print a number under the cursor. Leading zeros are not used.
+Negatives can only be printed with signed overloads, int and
+long. Please pay careful attention to C++ integer promotion
+rules if you need to print large or negative values.
+
+number: number to print
+base:   base to print in (2-16)
+
+----------------------------------------------------------------
+void print(unsigned number, int base);
+Print a number under the cursor. Leading zeros are not used.
+Negatives can only be printed with signed overloads, int and
+long. Please pay careful attention to C++ integer promotion
+rules if you need to print large or negative values.
+
+number: number to print
+base:   base to print in (2-16)
+
+----------------------------------------------------------------
+void print(long number, int base);
+Print a number under the cursor. Leading zeros are not used.
+Negatives can only be printed with signed overloads, int and
+long. Please pay careful attention to C++ integer promotion
+rules if you need to print large or negative values.
+
+number: number to print
+base:   base to print in (2-16)
+
+----------------------------------------------------------------
+void print(unsigned long number, int base);
+Print a number under the cursor. Leading zeros are not used.
+Negatives can only be printed with signed overloads, int and
+long. Please pay careful attention to C++ integer promotion
+rules if you need to print large or negative values.
+
+number: number to print
+base:   base to print in (2-16)
+
+----------------------------------------------------------------
+void println(char data);
+Overwrite the character under the cursor with a character. The
+cursor is moved to the next line as if GU7000_carriageReturn()
+and GU7000_lineFeed() had been executed.
+
+data: character to print
+
+----------------------------------------------------------------
+void println(const char *buffer, size_t size);
+Print each character in the buffer according to print(char). The
+cursor is moved to the next line as if GU7000_carriageReturn()
+and GU7000_lineFeed() had been executed.
+
+buffer: buffer to print
+size:   number of bytes in the buffer
+
+----------------------------------------------------------------
+void println(const char *str);
+Print each character in the string according to print(char). The
+cursor is moved to the next line as if GU7000_carriageReturn()
+and GU7000_lineFeed() had been executed.
+
+str: string to print
+
+----------------------------------------------------------------
+void println(int number, int base);
+Print a number under the cursor. Leading zeros are not used. The
+cursor is moved to the next line as if GU7000_carriageReturn()
+and GU7000_lineFeed() had been executed.
+
+number: number to print
+base:   base to print in (2-16)
+
+----------------------------------------------------------------
+void println(long number, int base);
+Print a number under the cursor. Leading zeros are not used. The
+cursor is moved to the next line as if GU7000_carriageReturn()
+and GU7000_lineFeed() had been executed.
+
+number: number to print
+base:   base to print in (2-16)
+
+----------------------------------------------------------------
+void println(unsigned int number, int base);
+Print a number under the cursor. Leading zeros are not used. The
+cursor is moved to the next line as if GU7000_carriageReturn()
+and GU7000_lineFeed() had been executed.
+
+number: number to print
+base:   base to print in (2-16)
+
+----------------------------------------------------------------
+void println(unsigned long number, int base);
+Print a number under the cursor. Leading zeros are not used. The
+cursor is moved to the next line as if GU7000_carriageReturn()
+and GU7000_lineFeed() had been executed.
+
+number: number to print
+base:   base to print in (2-16)
+
+----------------------------------------------------------------
+E-M-0064-00 11/14/2011
+----------------------------------------------------------------
+SUPPORT
+
+For further support, please contact:
+    Noritake Co., Inc.
+    2635 Clearbrook Dr 
+    Arlington Heights, IL 60005 
+    800-779-5846 
+    847-439-9020
+    support.ele@noritake.com
+
+All rights reserved. © Noritake Co., Inc.
