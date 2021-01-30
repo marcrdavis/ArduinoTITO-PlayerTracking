@@ -43,13 +43,18 @@ By Marc Davis (1/29/2021)
   - Adds Update Player Name function to WebUI
   - Minor html markup fixes to WebUI
   
-  Hardware requirements: Arduino Mega 2560 R3; RFID RC 522; W5100 Ethernet Shield; Serial Port Shield;
-  Compatible vacuum fluorescent display or LCD; if using an LCD then modifications will be required;
-  Modifications will be required if using another type of ethernet shield; Wifi shields are NOT recommended
+  Hardware requirements: 
+    Arduino Mega 2560 R3; RFID RC 522; W5100 Ethernet Shield; Serial Port Shield;
+    Compatible vacuum fluorescent display or LCD; if using a display other than the default IEE VFD then
+    modifications will be required - see inline comments; Modifications will be required if using another 
+    type of ethernet shield; Wifi shields are NOT recommended
 
   Software requirements:
-    You will need my modified version of IeeFlipNoFrills.h which fixes compatibility issues with
-    newer Arduino IDE
+    If using an IEE or Noritake VFD You will need my modified version of the libraries included in the zip file
+
+  Upgrading from earlier versions:
+    Be sure to check the sample config.txt file in the zip file for new or changed parameters they may be required
+    for the new version
 
   For TITO Setup please follow the included documentation. This has been tested on IGT, Bally, WMS and Konami.
 
