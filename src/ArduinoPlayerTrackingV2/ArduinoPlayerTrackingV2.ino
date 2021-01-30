@@ -1,19 +1,24 @@
 /*
-  Arduino TITO and Player Tracking v2.0.20210125
+  Arduino TITO and Player Tracking v2.0.20210129
   by Marc R. Davis - Copyright (c) 2020-2021 All Rights Reserved
 
   Portions of the Arduino SAS protocol implementation by Ian Walker - Thank you!
   Additional testing and troubleshooting by NLG member Eddiiie - Thank you!
 
-  Hardware requirements: Arduino Mega 2560 R3; RFID RC 522; W5100 Ethernet Shield; Serial Port Shield;
-  Compatible vacuum fluorescent display or LCD; if using an LCD then modifications will be required - see inline comments;
-  Modifications will be required if using another type of ethernet shield; Wifi shields are NOT recommended
+  Hardware requirements: 
+    Arduino Mega 2560 R3; RFID RC 522; W5100 Ethernet Shield; Serial Port Shield;
+    Compatible vacuum fluorescent display or LCD; if using a display other than the default IEE VFD then
+    modifications will be required - see inline comments; Modifications will be required if using another 
+    type of ethernet shield; Wifi shields are NOT recommended
 
   Software requirements:
-    You will need my modified version of IeeFlipNoFrills.h which fixes compatibility issues with
-    newer Arduino IDE
+    If using an IEE or Noritake VFD You will need my modified version of the libraries included in the zip file
 
-  For TITO Setup please follow the included documentation
+  Upgrading from earlier versions:
+    Be sure to check the sample config.txt file in the zip file for new or changed parameters they may be required
+    for the new version
+    
+  For TITO setup please follow the included documentation
 
   Note: Remote access has been made compatible with BETTORSlots TITO apps for IOS/Android; BETTORSlots is
         not affiliated with this project and does not support or endorse using their apps for this purpose;
@@ -32,10 +37,15 @@
   OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
-
 #include <IniFile.h>
-#include <IeeFlipNoFrills.h>
-//#include <LiquidCrystal.h>  // Enable this for LCDs and Disable IeeFlipNoFrills.h above
+
+#include <IeeFlipNoFrills.h>    // Enable for IEE VFDs; Disable other display includes
+//#include <LiquidCrystal.h>      // Enable this for LCDs; Disable other display includes
+
+//#include <GU7000_Interface.h>     // Enable this for GU-7000 Series VFDs; Disable other display includes
+//#include <GU7000_Serial_Async.h>  // Enable this for GU-7000 Series VFDs; Disable other display includes
+//#include <Noritake_VFD_GU7000.h>  // Enable this for GU-7000 Series VFDs; Disable other display includes
+
 #include <SPI.h>
 #include <MFRC522.h>
 #include <SD.h>
@@ -52,6 +62,8 @@
 
 int displayWidth = 20;
 int displayHeight = 2;
+int displayCols = 20;
+int displayRows = 2;
 int scrollDelay = 100;
 int cardType = 0;
 
@@ -154,9 +166,13 @@ byte TDR [5];
 // Setup instances
 // ------------------------------------------------------------------------------------------------------------
 
-// For VFD
+// For IEE VFDs
 IeeFlipNoFrills vfd(22, 23, /*control pins */
                     31, 30, 29, 28, 27, 26, 25, 24 /*data pins */);
+
+// For Noritake GU-7000 Series VFD; PINS: 3 = SIN, 5 = BUSY, 7 = RESET
+// GU7000_Serial_Async interface(38400, 3, 5, 7); 
+// Noritake_VFD_GU7000 vfd;
 
 // For LCD - 22 = RS, 23 = Enable, 24 = DB7, 25 = DB6, 26 = DB5, 27 = DB4
 // LiquidCrystal vfd(22, 23, 27, 26, 25, 24);  // Enable this for LCDs and Disable IeeFlipNoFrills above
@@ -185,7 +201,7 @@ void setup()
 
   // Read in the config and store in variables
   readConfig();
-
+   
   // Setup Serial Logging
   if (logToSerial) Serial.begin(9600);
 
@@ -193,8 +209,8 @@ void setup()
   Serial1.begin(19200);
   Serial1.setTimeout(200);
   pinMode(LED, OUTPUT);
-
-  Serial.println(F("Arduino TITO and Player Tracking - Version 2.0.20210125 By Marc R. Davis"));
+    
+  Serial.println(F("Arduino TITO and Player Tracking - Version 2.0.20210129 By Marc R. Davis"));
   Serial.println(F("Initializing..."));
 
   // Setup Scrolling Text
@@ -211,11 +227,18 @@ void setup()
     // Setup VFD
     vfd.begin(displayWidth, displayHeight);
 
+    // Enable for Noritake GU-7000 Series
+    /*delay(500);
+    vfd.interface(interface);
+    vfd.isModelClass(7003); // Set based on model of display
+    vfd.GU7000_reset();
+    vfd.GU7000_init(); */ 
+
     // Setup RFID
-    mfrc522.PCD_Init();
+    mfrc522.PCD_Init();    
   }
   else Serial.println(F("TITO Only Mode Enabled"));
-
+  
   showMessageOnVFD("Initializing...", 0);
   delay(2000);
 
@@ -237,10 +260,10 @@ void loop()
 {
   // Check for DHCP renewal
   checkEthernet();
-  
+ 
   if (onlyTITO)
   {
-    // Check web
+     // Check web
     htmlPoll();
 
     // Check game
@@ -249,9 +272,9 @@ void loop()
   else
   {
     showMessageOnVFD(casinoName, 0);
-
+    
     // Scroll Text Loop
-    for (int letter = 0; letter <= strlen(scrollBuffer) - displayWidth; letter++) //From 0 to upto n-displayWidth characters supply to below function
+    for (int letter = 0; letter <= strlen(scrollBuffer) - displayCols; letter++) //From 0 to upto n-displayWidth characters supply to below function
     {
       scrollText(0, letter);
 
@@ -286,6 +309,9 @@ void readConfig()
   if (ini.getValue(NULL, "playerMessage", buffer, 256)) strcpy(playerMessage, buffer);
   if (ini.getValue(NULL, "casinoName", buffer, 256)) strcpy(casinoName, buffer);
   if (ini.getValue(NULL, "displayHeight", buffer, 256)) displayHeight = atoi(buffer);
+  if (ini.getValue(NULL, "displayWidth", buffer, 256)) displayWidth = atoi(buffer);
+  if (ini.getValue(NULL, "displayRows", buffer, 256)) displayRows = atoi(buffer);
+  if (ini.getValue(NULL, "displayCols", buffer, 256)) displayCols = atoi(buffer);
   if (ini.getValue(NULL, "scrollDelay", buffer, 256)) scrollDelay = atoi(buffer);
   if (ini.getValue(NULL, "logToSerial", buffer, 256)) logToSerial = atoi(buffer);
   if (ini.getValue(NULL, "localStorage", buffer, 256)) localStorage = atoi(buffer);
@@ -830,8 +856,8 @@ void showMessageOnVFD(char message[], int line)
   if (onlyTITO) return;
 
   if (line == 0) vfd.clear();
-  int startPos = floor((displayWidth - strlen(message)) / 2);
-  vfd.setCursor(startPos, line);
+  int startPos = floor((displayWidth - strlen(message)*(displayWidth/displayCols))/2);
+  vfd.setCursor(startPos, line * floor(displayHeight/displayRows));
   vfd.print(message);
 }
 
@@ -839,8 +865,8 @@ void showMessageOnVFD(char message[], int line)
 
 void scrollText(int printStart, int startLetter)
 {
-  vfd.setCursor(printStart, 1);
-  for (int letter = startLetter; letter <= startLetter + displayWidth - 1; letter++)  // Print only X chars in Line #2 starting 'startLetter'
+  vfd.setCursor(printStart, floor(displayHeight/displayRows));
+  for (int letter = startLetter; letter <= startLetter + displayCols - 1; letter++)  // Print only X chars in Line #2 starting 'startLetter'
   {
     vfd.print(scrollBuffer[letter]);
   }
