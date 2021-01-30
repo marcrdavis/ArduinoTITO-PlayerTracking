@@ -1,5 +1,7 @@
 displayWidth=20
 displayHeight=2
+displayCols=20
+displayRows=2
 scrollDelay=110
 logToSerial=1
 localStorage=1
