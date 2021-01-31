@@ -53,7 +53,7 @@ By Marc Davis (1/29/2021)
     If using an IEE or Noritake VFD You will need my modified version of the libraries included in the zip file
 
   Upgrading from earlier versions:
-    Be sure to check the sample config.txt file in the zip file for new or changed parameters they may be required
+    Be sure to check the sample config.txt file in the zip file for new or changed parameters that may be required
     for the new version
 
   For TITO Setup please follow the included documentation. This has been tested on IGT, Bally, WMS and Konami.
