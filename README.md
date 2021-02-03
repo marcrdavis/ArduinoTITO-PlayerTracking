@@ -12,7 +12,7 @@ By Marc Davis (1/29/2021)
     AS PER THE DOCUMENTATION
   
   - Adds support for Noritake GU-7000 or equivalent VFDs with modified library
-  - Adds support for pixel displays and new config properties for setting row and colunm sizes
+  - Adds support for pixel displays and new config properties for setting row and column sizes
   - Fixes a bug where the DisplayWidth property was not being read from the config.txt file
   - Improved documentation; includes pinouts for tested displays
   
