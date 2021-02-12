@@ -8,11 +8,13 @@ localStorage=1
 onlyTITO=0
 changeToCredits=0
 changeCredits=200
+adminPin=1234
+compPercentage=0.01
 useDHCP=1
 ipAddress=
 serverIPAddress=
 gameName=Slot Machine
 casinoName=The CASINO
-scrollingText=Welcome to [CASINONAME]! Enjoy your stay!                    Please insert your Player Card
+attractMessage=Welcome to [CASINONAME]! Enjoy your stay! Please insert your Player Card
 playerMessage=Welcome back [CARDHOLDER]! Enjoy your stay in [CASINONAME]!
 
