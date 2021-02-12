@@ -1,20 +1,16 @@
 displayWidth=20
 displayHeight=2
-displayCols=20
-displayRows=2
 scrollDelay=110
 logToSerial=1
 localStorage=1
 onlyTITO=0
 changeToCredits=0
 changeCredits=200
-adminPin=1234
-compPercentage=0.01
 useDHCP=1
 ipAddress=
 serverIPAddress=
 gameName=Slot Machine
 casinoName=The CASINO
-attractMessage=Welcome to [CASINONAME]! Enjoy your stay! Please insert your Player Card
+displayMessage=Welcome to [CASINONAME]! Enjoy your stay! Please insert your Player Card
 playerMessage=Welcome back [CARDHOLDER]! Enjoy your stay in [CASINONAME]!
 
