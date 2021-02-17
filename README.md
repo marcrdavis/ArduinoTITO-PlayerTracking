@@ -11,22 +11,22 @@ By Marc Davis (2/16/2021)
   * THERE ARE CHANGES TO THE CONFIG.TXT FILE IN THIS BUILD! PLEASE UPDATE YOUR CONFIG.TXT FILE
     AS PER THE DOCUMENTATION
     
-    - Added support for Keypads, including Bally 6x2, 3x4 and ACT 8x2
-    - Added support for the Admin Card; cardType 2
-    - Added keypad-accessible Admin Controls
-    - Added keypad-accessible Player Controls
-    - Added support for Player Comps
-    - Added support for Game Manager Tournament Mode
-    - Added support for Time Sync with Game Manager host
-    - Added additional messaging to display on game state changes
-    - Fixed issue where player data would not be loaded if player card was left in machine at power-on
-    - Fixed a few bugs in the SAS protocol implementation; also adds ACK/NACK responses to applicable commands
-    - Package now includes Game Manager - a Windows App to manage your machines
-    - Minor fixes to Web UI; you will need to replace the index.html file on your SD card(s) with the new one in the package
-    - Updates and fixes to APTS card server; if using the card server you will need to update it and all of your machines at the same time because of
-      message-format changes in this version
-    - Significant code changes, refactoring and improvements
-    - Improved documentation; now with pinouts for supported displays and keypads; Source code in-line comments also extensively updated
+  - Added support for Keypads, including Bally 6x2, 3x4 and ACT 8x2
+  - Added support for the Admin Card; cardType 2
+  - Added keypad-accessible Admin Controls
+  - Added keypad-accessible Player Controls
+  - Added support for Player Comps
+  - Added support for Game Manager Tournament Mode
+  - Added support for Time Sync with Game Manager host
+  - Added additional messaging to display on game state changes
+  - Fixed issue where player data would not be loaded if player card was left in machine at power-on
+  - Fixed a few bugs in the SAS protocol implementation; also adds ACK/NACK responses to applicable commands
+  - Package now includes Game Manager - a Windows App to manage your machines
+  - Minor fixes to Web UI; you will need to replace the index.html file on your SD card(s) with the new one in the package
+  - Updates and fixes to APTS card server; if using the card server you will need to update it and all of your machines at the same time because of
+    message-format changes in this version
+  - Significant code changes, refactoring and improvements
+  - Improved documentation; now with pinouts for supported displays and keypads; Source code in-line comments also extensively updated
     
   Build 20210129 Updates
   * THERE ARE CHANGES TO THE CONFIG.TXT FILE IN THIS BUILD! PLEASE UPDATE YOUR CONFIG.TXT FILE
