@@ -11,7 +11,7 @@ By Marc Davis (2/16/2021)
   * THERE ARE CHANGES TO THE CONFIG.TXT FILE IN THIS BUILD! PLEASE UPDATE YOUR CONFIG.TXT FILE
     AS PER THE DOCUMENTATION
     
-    - Added support for Keypads, including Bally 6x2 & 3x4 and ACT 8x2
+    - Added support for Keypads, including Bally 6x2, 3x4 and ACT 8x2
     - Added support for the Admin Card; cardType 2
     - Added keypad-accessible Admin Controls
     - Added keypad-accessible Player Controls
