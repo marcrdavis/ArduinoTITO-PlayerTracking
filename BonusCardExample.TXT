@@ -1,4 +1,4 @@
 cardHolder=SYSTEM BONUS
 cardType=3
-creditsToAdd=9999
+creditsToAdd=1000
 

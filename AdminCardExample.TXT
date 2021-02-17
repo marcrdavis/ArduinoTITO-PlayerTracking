@@ -1,0 +1,4 @@
+[CardData]
+carHholder=Admin
+cardType=2
+

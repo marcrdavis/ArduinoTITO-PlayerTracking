@@ -1,7 +1,10 @@
 [CardData]
-carHholder=Marc Davis
+carHholder=John Smith
 cardType=1
-playerTotalGames=4
-playerGamesWon=1
-playerGamesLost=3
-playerTotalWon=80
+playerTotalGames=0
+playerGamesWon=0
+playerGamesLost=0
+playerTotalWon=0
+playerComps=0
+
+

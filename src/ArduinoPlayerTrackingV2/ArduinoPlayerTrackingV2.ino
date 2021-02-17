@@ -1,21 +1,23 @@
 /*
-  Arduino TITO and Player Tracking v2.0.20210129
+  Arduino TITO and Player Tracking v2.0.20210216
   by Marc R. Davis - Copyright (c) 2020-2021 All Rights Reserved
+  https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
   Portions of the Arduino SAS protocol implementation by Ian Walker - Thank you!
   Additional testing and troubleshooting by NLG member Eddiiie - Thank you!
 
   Hardware requirements: 
     Arduino Mega 2560 R3; RFID RC 522; W5100 Ethernet Shield; Serial Port Shield;
-    Compatible vacuum fluorescent display or LCD; if using a display other than the default IEE VFD then
-    modifications will be required - see inline comments; Modifications will be required if using another 
-    type of ethernet shield; Wifi shields are NOT recommended
+    Compatible vacuum fluorescent display or LCD; if using a display other than the default LCD then
+    modifications will be required - see inline comments; Compatible keypad; if using a keypad other than
+    the default Bally 6x2/3x4 then modifications will be required - see inline comments; Modifications will 
+    be required if using another type of ethernet shield; Wifi shields are NOT recommended
 
   Software requirements:
     If using an IEE or Noritake VFD You will need my modified version of the libraries included in the zip file
 
   Upgrading from earlier versions:
-    Be sure to check the sample config.txt file in the zip file for new or changed parameters they may be required
+    Be sure to check the sample config.txt file in the zip file for new or changed parameters that may be required
     for the new version
     
   For TITO setup please follow the included documentation
@@ -35,26 +37,35 @@
   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
   IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
   OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 */
-#include <IniFile.h>
 
-#include <IeeFlipNoFrills.h>    // Enable for IEE VFDs; Disable other display includes
-//#include <LiquidCrystal.h>      // Enable this for LCDs; Disable other display includes
+// ------------------------------------------------------------------------------------------------------------
+// Display Includes - Enable ONLY ONE Group
+// ------------------------------------------------------------------------------------------------------------
 
+// IEE VFDs
+//#include <IeeFlipNoFrills.h>      // Enable for IEE VFDs; Disable other display includes
+
+// LCDs
+#include <LiquidCrystal.h>          // Enable this for LCDs; Disable other display includes
+
+// Noritake GU-7000s
 //#include <GU7000_Interface.h>     // Enable this for GU-7000 Series VFDs; Disable other display includes
 //#include <GU7000_Serial_Async.h>  // Enable this for GU-7000 Series VFDs; Disable other display includes
 //#include <Noritake_VFD_GU7000.h>  // Enable this for GU-7000 Series VFDs; Disable other display includes
 
+// ------------------------------------------------------------------------------------------------------------
+// Required Libraries
+// ------------------------------------------------------------------------------------------------------------
+
+#include <IniFile.h>
 #include <SPI.h>
 #include <MFRC522.h>
 #include <SD.h>
 #include <Ethernet.h>
 #include <EEPROM.h>
-
-// Setup Pins
-#define SS_PIN 53  //for RFID
-#define RST_PIN 49  //for RFID
+#include <Keypad.h>
+#include <TimeLib.h>
 
 // ------------------------------------------------------------------------------------------------------------
 // Player Tracking Variables
@@ -64,8 +75,9 @@ int displayWidth = 20;
 int displayHeight = 2;
 int displayCols = 20;
 int displayRows = 2;
-int scrollDelay = 100;
+int scrollDelay = 110;
 int cardType = 0;
+int adminPin = 1234;
 
 long Credits = 0;
 long totalIn = 0;
@@ -82,6 +94,12 @@ long playerTotalGames = 0;
 long playerGamesWon = 0;
 long playerGamesLost = 0;
 long playerTotalWon = 0;
+long tournamentScore = 0;
+long winMeterStart = 0;
+float playerComps = 0;
+float compPercentage = 0.01; // Set to zero to disable comps
+unsigned long startTime = 0;
+unsigned long endTime = 0;
 
 bool logToSerial = 1;
 bool haveStartingStats = false;
@@ -89,10 +107,18 @@ bool localStorage = 1;
 bool onlyTITO = 0;
 bool changeToCredits = 0;
 bool useDHCP = 1;
+bool sasOnline = false;
 bool sasError = false;
+bool inAdminMenu = false;
+bool inPlayerMenu = false;
+bool inTournament = false;
+bool timeExpired = false;
+bool waitingForStart = false;
+bool isLocked = false;
+bool resetScroll = false;
 
 String ipStr;
-String cardHolder = "";
+String cardHolder = "No Card Inserted";
 String lastCardID;
 String cardID;
 String creditsToAdd = "1000";
@@ -102,8 +128,12 @@ String stringData = "";
 
 char ipAddress[15];
 char casinoName[30] = "THE CASINO";  // actual text should not exceed the display width
-char scrollingText[256] = "Welcome to [CASINONAME]! Enjoy your stay!                    Please insert your Player Card";
-char playerMessage[256] = "Welcome back [CARDHOLDER]! Enjoy your stay!";
+char attractMessage[256] = "Welcome to [CASINONAME]! Enjoy your stay! Please insert your Player Card";
+char playerMessage[256] = "Welcome back [CARDHOLDER]! Enjoy your stay in [CASINONAME]!";
+char bonusMessage[100] = "More credits means MORE FUN! Please remove the System Bonus Card now and insert your Player Card.";
+char tournamentMessage[30] = "TOURNAMENT PLAY IN PROGRESS";
+char adminMenu[150] = "1=Add Credits  2=Sound On  3=Sound Off  4=Unlock Game  5=Lock Game  6=Enable BV  7=Disable BV  8=Change-Credits On  9=Change-Credits Off  0=Exit Menu";
+char playerMenu[55] = "1=Show Comp Balance  2=Use Comp Credits  0=Exit Menu";
 char scrollBuffer[296];
 char fixedBuffer[21];
 
@@ -112,7 +142,11 @@ const char htmlHeader[] = "HTTP/1.1 200 OK\r\n"
                           "Connection: close\r\n\r\n"
                           "<!DOCTYPE HTML>\r\n"
                           "<html>\r\n";
-
+                          
+const char textHeader[] = "HTTP/1.1 200 OK\r\n"
+                          "Content-Type: text/plain\r\n"
+                          "Connection: close\r\n\r\n";
+ 
 const char htmlFooter[] = "</html>\r\n\r\n";
 
 byte mac[] = { 0x38, 0x24, 0x01, 0x00, 0x00, 0x00 }; // Will be set by init routine
@@ -134,16 +168,15 @@ byte returnStatus[1];
 byte SVNS[2] = {SASAdr, 0x57};
 byte TP[2] = {SASAdr, 0x70};
 byte HPI[2] = {SASAdr, 0x1B};
-byte RHP[4] = {SASAdr, 0x94};
-byte LOCK[4] = {SASAdr, 0x01, 0x51, 0x08};
-byte ULOCK[4] = {SASAdr, 0x02, 0xCA, 0x3A};
-byte MUTE[4] = {SASAdr, 0x03, 0x43, 0x2B};
-byte UMUTE[4] = {SASAdr, 0x04, 0xFC, 0x5F};
-byte EBILL[4] = {SASAdr, 0x06, 0xEE, 0x7C};
-byte DBILL[4] = {SASAdr, 0x07, 0x67, 0x6D};
+byte RHP[4] = {SASAdr, 0x94, 0x00, 0x00};
+byte LOCK[4] = {SASAdr, 0x01, 0x00, 0x00};
+byte ULOCK[4] = {SASAdr, 0x02, 0x00, 0x00};
+byte MUTE[4] = {SASAdr, 0x03, 0x00, 0x00};
+byte UMUTE[4] = {SASAdr, 0x04, 0x00, 0x00};
+byte EBILL[4] = {SASAdr, 0x06, 0x00, 0x00};
+byte DBILL[4] = {SASAdr, 0x07, 0x00, 0x00};
 byte EVInfo[5] = {SASAdr, 0x4D, 0x00, 0x00, 0x00};
 byte transComplete[6] = {SASAdr, 0x71, 0x01, 0xFF, 0x1F, 0xD0};
-byte globalCRC[2];
 byte mCredits[2] = {SASAdr, 0x1A};
 byte mCoinIn[2] = {SASAdr, 0x11};
 byte mTotWon[2] = {SASAdr, 0x12};
@@ -161,26 +194,74 @@ byte TRS [21];
 byte COT [10];
 byte COS [5];
 byte TDR [5];
+byte TIM [11];
+
+// ------------------------------------------------------------------------------------------------------------
+// Displays - Enable ONLY ONE Group
+// ------------------------------------------------------------------------------------------------------------
+
+// IEE VFDs
+//IeeFlipNoFrills vfd(22, 23, /*control pins */
+//                    31, 30, 29, 28, 27, 26, 25, 24 /*data pins */);
+
+// LCDs Pins 22 = RS, 23 = Enable, 24 = DB7, 25 = DB6, 26 = DB5, 27 = DB4
+LiquidCrystal vfd(22, 23, 27, 26, 25, 24);
+
+// Noritake GU-7000 Series VFD; PINS: 3 = SIN, 5 = BUSY, 7 = RESET; There is also code to enable in setup()
+// GU7000_Serial_Async interface(38400, 3, 5, 7); 
+// Noritake_VFD_GU7000 vfd;
+
+// ------------------------------------------------------------------------------------------------------------
+// Keypads - Enable ONLY ONE Group
+// ------------------------------------------------------------------------------------------------------------
+
+// Bally 6x2 Keypad P/N 105123F & 3x4 PCDSKEY1
+const int ROW_NUM = 3; //  6x2 Keypad presents as a 3x4 matrix
+const int COLUMN_NUM = 4; 
+
+// Key Matrix
+char keys[ROW_NUM][COLUMN_NUM] = {
+  {'1','2','3','C'},
+  {'4','5','6','0'},
+  {'7','8','9','E'}
+};
+
+// Pin definition
+byte pin_rows[ROW_NUM] = {39, 38, 41}; // Keypad Pins 1,2,3
+byte pin_column[COLUMN_NUM] = {45, 42, 43, 40}; // Keypad Pins 7,6,5,4
+
+
+// ACT 8x2 Keypad
+/*const int ROW_NUM = 4; // Keypad is physically 8x2 but presents as a 4x4 matrix
+const int COLUMN_NUM = 4; 
+
+// Key Matrix
+char keys[ROW_NUM][COLUMN_NUM] = {
+  {'1','2','3','U'},
+  {'4','5','6','D'},
+  {'7','8','9','-'},
+  {'C','0','H','E'}
+};
+
+// Pin definition
+byte pin_rows[ROW_NUM] = {38, 39, 40, 41}; // Keypad Pins 1,2,3,4
+byte pin_column[COLUMN_NUM] = {42, 43, 44, 45}; // Keypad Pins 5,6,7,8 */
 
 // ------------------------------------------------------------------------------------------------------------
 // Setup instances
 // ------------------------------------------------------------------------------------------------------------
 
-// For IEE VFDs
-IeeFlipNoFrills vfd(22, 23, /*control pins */
-                    31, 30, 29, 28, 27, 26, 25, 24 /*data pins */);
+// Pins for RFID
+#define SS_PIN 53  
+#define RST_PIN 49 
 
-// For Noritake GU-7000 Series VFD; PINS: 3 = SIN, 5 = BUSY, 7 = RESET
-// GU7000_Serial_Async interface(38400, 3, 5, 7); 
-// Noritake_VFD_GU7000 vfd;
-
-// For LCD - 22 = RS, 23 = Enable, 24 = DB7, 25 = DB6, 26 = DB5, 27 = DB4
-// LiquidCrystal vfd(22, 23, 27, 26, 25, 24);  // Enable this for LCDs and Disable IeeFlipNoFrills above
-                    
-MFRC522 mfrc522(SS_PIN, RST_PIN); // Create MFRC522 instance.
+MFRC522 mfrc522(SS_PIN, RST_PIN);
 File sdFile;
 EthernetServer server(80);
+Keypad keypad = Keypad( makeKeymap(keys), pin_rows, pin_column, ROW_NUM, COLUMN_NUM );
 
+// ------------------------------------------------------------------------------------------------------------
+// Setup - called once during init
 // ------------------------------------------------------------------------------------------------------------
 
 void setup()
@@ -193,8 +274,11 @@ void setup()
   changeCredits.reserve(8);
   ipStr.reserve(15);
   gameName.reserve(30);
-  stringData.reserve(256);
+  stringData.reserve(296);
 
+  // Setup RTC
+  setSyncProvider(requestSync);
+  
   // Initiate  SPI bus
   SPI.begin();
   initSDCard();
@@ -210,16 +294,11 @@ void setup()
   Serial1.setTimeout(200);
   pinMode(LED, OUTPUT);
     
-  Serial.println(F("Arduino TITO and Player Tracking - Version 2.0.20210129 By Marc R. Davis"));
+  Serial.println(F("Arduino TITO and Player Tracking - Version 2.0.20210216 By Marc R. Davis"));
   Serial.println(F("Initializing..."));
 
-  // Setup Scrolling Text
-  String tmp = String(scrollingText);
-  tmp.replace("[CASINONAME]", casinoName);
-  tmp.toCharArray(scrollingText, tmp.length() + 1);
-  strcpy(scrollBuffer, "                    ");
-  strcat(scrollBuffer, scrollingText);
-  strcat(scrollBuffer, "                    ");
+  // Setup Attract Scroll
+  setupAttractMessage();
 
   // Skip init if TITO Only Mode
   if (!onlyTITO)
@@ -240,27 +319,30 @@ void setup()
   else Serial.println(F("TITO Only Mode Enabled"));
   
   showMessageOnVFD("Initializing...", 0);
-  delay(2000);
+  delay(1000);
 
   // Initialize Ethernet
   initEthernet();
 
   // Initialize HTTP Server
   server.begin();
-
-  // Clear the serial buffer
+  
+  // Clear the game serial buffer
   if (Serial1.available() > 3) while (Serial1.available() > 3) Serial1.read();
-
-  Serial.println(F("Initialization complete"));
+  
+  Serial.println(F("Initialization complete"));        
 }
 
+// ------------------------------------------------------------------------------------------------------------
+// Main processing loop
 // ------------------------------------------------------------------------------------------------------------
 
 void loop()
 {
   // Check for DHCP renewal
   checkEthernet();
- 
+  resetScroll=false;
+
   if (onlyTITO)
   {
      // Check web
@@ -271,25 +353,288 @@ void loop()
   }
   else
   {
-    showMessageOnVFD(casinoName, 0);
+    // Display Messages
+    if (!inAdminMenu && !inPlayerMenu && !inTournament && !isLocked) showMessageOnVFD(casinoName, 0);
     
     // Scroll Text Loop
-    for (int letter = 0; letter <= strlen(scrollBuffer) - displayCols; letter++) //From 0 to upto n-displayWidth characters supply to below function
+    for (int letter = 0; letter <= strlen(scrollBuffer) - displayCols; letter++) //From 0 to up to n-displayWidth characters supply to below function
     {
-      scrollText(0, letter);
-
+      if (resetScroll) return;
+      if (!isLocked) scrollText(0, letter);
+      
       // Check web
       htmlPoll();
 
-      // Check for player card events
-      if (checkForPlayerCard()) return;
-
       // Check game
       generalPoll();
+
+      // Check for player card events
+      if (sasOnline) if (checkForPlayerCard()) return;
+
+      // Keypad input
+      char key = keypad.getKey();
+      if (inAdminMenu)
+      {
+        // Admin Menu Options
+        if (key == '1') adminAddCredits();
+        if (key == '2') unMute();
+        if (key == '3') mute();
+        if (key == '4') unlockMachine();
+        if (key == '5') lockMachine();
+        if (key == '6') enableBV();
+        if (key == '7') disableBV();
+        if (key == '8') changeButtonToCredits(true);
+        if (key == '9') changeButtonToCredits(false);
+        if (key == '0') { 
+          exitMenu();
+          return;                
+        }
+      }
+
+      if (inPlayerMenu)
+      {
+        // Player Menu Options
+        if (key == '1') showAvailComps();
+        if (key == '2') useCompCredits();
+        if (key == '0') { 
+          exitMenu();
+          return;                
+        }
+      }
+
+      // Access admin menu using pin
+      if (key == 'C' && !inAdminMenu && !inPlayerMenu) {
+        showMessageOnVFD("ENTER ADMIN PIN", 0); 
+        if (readKeypad(true) == String(adminPin)) enterAdminMenu();
+        return;
+      }
+
+      // Access player menu
+      if (cardType == 1 && key == 'E' && !inAdminMenu && !inPlayerMenu && !inTournament && !isLocked) {
+        enterPlayerMenu();
+        return;
+      }      
+
+      // Tournament timing
+      if (inTournament && waitingForStart) {
+        if (startTime - now() <=0) {
+          // Start Tournament
+          waitingForStart=false;
+          timeExpired=false;
+          winMeterStart = pollMeters(mTotWon);
+          unlockMachine();
+          vfd.clear();
+          showMessageOnVFD("Score: 0",0);
+        }
+        else 
+        {
+          showMessageOnVFD("GAME STARTS IN", 0);
+          char b[20];
+          stringData = " " + String(startTime - now()) + " second(s) "; 
+          stringData.toCharArray(b, stringData.length() + 1); 
+          showMessageOnVFD(b, 1);
+        }
+      }
+
+      // Tournament progress
+      if (inTournament && !waitingForStart  && !timeExpired) {
+        if (endTime - now() <= 0) {
+          // End Tournament play
+          timeExpired=true;
+          lockMachine();
+          vfd.clear();
+          showMessageOnVFD("TOURNAMENT OVER", 0);
+          showMessageOnVFD("PLEASE WAIT", 1);
+          delay(2000);                    
+        }
+        else if (inTournament && !timeExpired) {
+          totalWon = pollMeters(mTotWon);
+          if (totalWon>0) tournamentScore = totalWon - winMeterStart;
+          char b[20];
+          stringData = "Score: " + String(tournamentScore);
+          stringData.toCharArray(b, stringData.length() + 1); 
+          showMessageOnVFD(b,0);        
+        }           
+      }      
     }
   }
 }
 
+// ------------------------------------------------------------------------------------------------------------
+// Player & Admin Functions
+// ------------------------------------------------------------------------------------------------------------
+
+void showAvailComps()
+{
+  char b[20];
+  int creds = 0;
+  
+  if (readGameData()) creds = playerComps + ((totalIn - tempTotalIn) * compPercentage);
+  else creds = playerComps;
+
+  stringData = String(creds) + " credits";
+  stringData.toCharArray(b, stringData.length() + 1);  
+  showMessageOnVFD("PLAYER COMPS",0);
+  showMessageOnVFD(b,1);
+  delay(2000);
+  
+  showMessageOnVFD("PLAYER MENU",0);
+}
+
+void useCompCredits()
+{
+  int creds = 0;
+  
+  if (readGameData()) playerComps += ((totalIn - tempTotalIn) * compPercentage);
+  creds = playerComps;
+    
+  if (creds <1){
+    showMessageOnVFD("NO COMPS AVAIL",0);
+    delay(2000);
+  }
+  else {
+    addCredits(String(creds));
+    playerComps=playerComps-creds;    
+
+    // Call this now to write back the changed playerComps; the other values will be updated when the card is removed
+    if (localStorage) writePlayerDataToSD(lastCardID, cardType, cardHolder, playerTotalGames, playerGamesWon, playerGamesLost, playerTotalWon, playerComps);
+    else writePlayerDataToServer(lastCardID, cardType, cardHolder, playerTotalGames, playerGamesWon, playerGamesLost, playerTotalWon, playerComps);
+  }
+  showMessageOnVFD("PLAYER MENU",0);
+}
+
+void adminAddCredits()
+{
+  showMessageOnVFD("AMOUNT TO ADD",0);
+  
+  String credits = readKeypad(false);
+  if (credits != "") addCredits(credits);
+  showMessageOnVFD("ADMIN MENU",0);
+}
+
+void exitMenu()
+{
+  // Reset display attract mode to last state
+  Serial.println(F("Leaving Menu"));
+  if (cardType == 1) setupPlayerMessage(false);
+  else setupAttractMessage();
+  
+  inAdminMenu=false;
+  inPlayerMenu=false;
+}
+
+void enterPlayerMenu()
+{
+  showMessageOnVFD("PLAYER MENU",0);
+  inPlayerMenu=true;
+  Serial.println(F("Player Menu Active"));
+  strcpy(scrollBuffer, "                    ");
+  strcat(scrollBuffer, playerMenu);
+  strcat(scrollBuffer, "                    ");
+}
+
+void enterAdminMenu()
+{
+  showMessageOnVFD("ADMIN MENU",0);
+  inAdminMenu=true;
+  Serial.println(F("Admin Menu Active"));
+  strcpy(scrollBuffer, "                    ");
+  strcat(scrollBuffer, adminMenu);
+  strcat(scrollBuffer, "                    ");
+}
+
+// Get keypad input
+String readKeypad(bool mask)
+{
+  stringData = "";
+  char key;
+
+  key = keypad.getKey();
+  while (key != 'E')
+  {
+    if (key == 'C') { 
+      stringData = "";
+      showMessageOnVFD("                    ",1); 
+    }
+    else {
+      if (key) { 
+        stringData += String(key); 
+        char b[20];
+        if (mask)
+        {
+          String s = "*********************";
+          s.toCharArray(b, stringData.length() + 1);
+        }
+        else
+        {          
+          stringData.toCharArray(b, stringData.length() + 1);
+        }
+        strcpy(fixedBuffer, b);
+        showMessageOnVFD(b,1); 
+      }
+    }
+    
+    key = keypad.getKey();
+    delay(1);
+
+    // Must continue checking game
+    generalPoll();
+  }
+  return stringData;
+}
+
+// ------------------------------------------------------------------------------------------------------------
+// Tournament functions
+// ------------------------------------------------------------------------------------------------------------
+
+bool startTournamentMode(String credits)
+{
+  // if arduino clock is slow then start time will not be right - compensate
+  if (startTime - now()>30) {
+    int diff = (startTime - now())-30;
+    startTime -= diff;
+    endTime -= diff;
+  }
+          
+  inTournament=true;
+  waitingForStart=true;
+  addCredits(credits);
+  delay(1000);
+  disableBV();
+  delay(500);
+  lockMachine();
+  tournamentScore = 0; 
+    
+  Serial.println(F("Tournament Started"));
+  vfd.clear();
+  strcpy(scrollBuffer, "                    ");
+  strcat(scrollBuffer, tournamentMessage);
+  strcat(scrollBuffer, "                    ");
+   
+  return true;
+}
+
+void exitTournamentMode()
+{
+   // Reset display attract mode to last state
+  Serial.println(F("Tournament Finished"));
+  totalWon = pollMeters(mTotWon);
+  if (totalWon>0) tournamentScore = totalWon - winMeterStart;
+          
+  enableBV();
+  inTournament=false;
+  waitingForStart=false;
+  startTime=0;
+  endTime=0;
+
+  vfd.clear();
+  showMessageOnVFD("WAITING ON HOST",1); 
+  if (cardType == 1) setupPlayerMessage(false);
+  else setupAttractMessage();  
+}
+
+// ------------------------------------------------------------------------------------------------------------
+// IO Functions
 // ------------------------------------------------------------------------------------------------------------
 
 // Read the configuration from SD card
@@ -305,13 +650,14 @@ void readConfig()
     return;
   }
 
-  if (ini.getValue(NULL, "scrollingText", buffer, 256)) strcpy(scrollingText, buffer);
+  if (ini.getValue(NULL, "attractMessage", buffer, 256)) strcpy(attractMessage, buffer);
   if (ini.getValue(NULL, "playerMessage", buffer, 256)) strcpy(playerMessage, buffer);
   if (ini.getValue(NULL, "casinoName", buffer, 256)) strcpy(casinoName, buffer);
   if (ini.getValue(NULL, "displayHeight", buffer, 256)) displayHeight = atoi(buffer);
   if (ini.getValue(NULL, "displayWidth", buffer, 256)) displayWidth = atoi(buffer);
   if (ini.getValue(NULL, "displayRows", buffer, 256)) displayRows = atoi(buffer);
   if (ini.getValue(NULL, "displayCols", buffer, 256)) displayCols = atoi(buffer);
+  if (ini.getValue(NULL, "adminPin", buffer, 256)) adminPin = atoi(buffer);
   if (ini.getValue(NULL, "scrollDelay", buffer, 256)) scrollDelay = atoi(buffer);
   if (ini.getValue(NULL, "logToSerial", buffer, 256)) logToSerial = atoi(buffer);
   if (ini.getValue(NULL, "localStorage", buffer, 256)) localStorage = atoi(buffer);
@@ -320,6 +666,7 @@ void readConfig()
   if (ini.getValue(NULL, "useDHCP", buffer, 256)) useDHCP = atoi(buffer);
   if (ini.getValue(NULL, "changeCredits", buffer, 256)) changeCredits = String(buffer);
   if (ini.getValue(NULL, "gameName", buffer, 256)) gameName = String(buffer);
+  if (ini.getValue(NULL, "compPercentage", buffer, 256)) compPercentage = atof(buffer);
 
   if (ini.getValue(NULL, "ipAddress", buffer, 256))
   {
@@ -335,69 +682,18 @@ void readConfig()
   ini.close();
 }
 
-// Add X credits to game
-
-bool addCredits(String credits)
-{
-  String paddedValue = "";
-  byte ac[4];
-  credits.trim();
-  for (int i = 0; i < 8 - credits.length(); i++) paddedValue += "0";
-  paddedValue += credits;
-  ac[0] = dec2bcd(paddedValue.substring(0, 2).toInt());
-  ac[1] = dec2bcd(paddedValue.substring(2, 4).toInt());
-  ac[2] = dec2bcd(paddedValue.substring(4, 6).toInt());
-  ac[3] = dec2bcd(paddedValue.substring(6, 8).toInt());
-
-  LegacyBonus(0x01, ac[0], ac[1], ac[2], ac[3], 0x00);
-
-  char b[10];
-  credits.toCharArray(b, credits.length() + 1);
-
-  strcpy(fixedBuffer, b);
-  strcat(fixedBuffer, " credits added");
-  Serial.print(credits); Serial.println(F(" credits added"));
-  showMessageOnVFD(fixedBuffer, 0);
-  delay(2000);
-  showMessageOnVFD(casinoName, 0);
-  return true;
-}
-
-// Read the game meters
-
-bool readGameData()
-{
-  Serial.println(F("Reading meters from game"));
-  sasError = false;
-
-  Credits = pollMeters(mCredits);
-  delay(100);
-  totalIn = pollMeters(mCoinIn);
-  delay(100);
-  totalWon = pollMeters(mTotWon);
-  delay(100);
-  totalGames = pollMeters(mTotGames);
-  delay(100);
-  gamesWon = pollMeters(mgamesWon);
-  delay(100);
-  gamesLost = pollMeters(mgamesLost);
-
-  return !sasError;
-}
-
 // Read player data from the SD card
 
 String readPlayerDataFromSD(String cid, bool remote)
 {
   stringData = "";
   String CardFilename = cid + ".txt";
-
   IniFile ini(CardFilename.c_str());
 
   if (!SD.exists(CardFilename))
   {
     // Create file with defaults
-    writePlayerDataToSD(CardFilename, 1, "Player", 0, 0, 0, 0);
+    writePlayerDataToSD(cid, 1, "Player", 0, 0, 0, 0, 0);
   }
 
   char buffer[30];
@@ -411,7 +707,8 @@ String readPlayerDataFromSD(String cid, bool remote)
       if (ini.getValue(NULL, "playerGamesWon", buffer, 30)) stringData += String(buffer) + "|";
       if (ini.getValue(NULL, "playerGamesLost", buffer, 30)) stringData += String(buffer) + "|";
       if (ini.getValue(NULL, "playerTotalWon", buffer, 30)) stringData += String(buffer) + "|";
-      if (ini.getValue(NULL, "creditsToAdd", buffer, 30)) stringData += String(buffer);
+      if (ini.getValue(NULL, "creditsToAdd", buffer, 30)) stringData += String(buffer) + "|";
+      if (ini.getValue(NULL, "playerComps", buffer, 30)) stringData += String(buffer);
     }
     else
     {
@@ -422,6 +719,8 @@ String readPlayerDataFromSD(String cid, bool remote)
       if (ini.getValue(NULL, "playerGamesLost", buffer, 30)) playerGamesLost = atol(buffer);
       if (ini.getValue(NULL, "playerTotalWon", buffer, 30)) playerTotalWon = atol(buffer);
       if (ini.getValue(NULL, "creditsToAdd", buffer, 30)) creditsToAdd = String(buffer);
+      if (ini.getValue(NULL, "playerComps", buffer, 30)) playerComps = atof(buffer);
+     
       if (cardHolder == "") cardHolder = "Player";
     }
     ini.close();
@@ -432,12 +731,12 @@ String readPlayerDataFromSD(String cid, bool remote)
 
 // Write player data to remote server
 
-void writePlayerDataToServer(String cid, int ct, String cn, long pg, long pw, long pl, long ptw)
+void writePlayerDataToServer(String cid, int ct, String cn, long pg, long pw, long pl, long ptw, float pc)
 {
   EthernetClient client;
   String sIP = String(serverIP[0]) + '.' + String(serverIP[1]) + '.' + String(serverIP[2]) + '.' + String(serverIP[3]);
   cn.replace(" ", "+");
-  String playerData = cn + "|" + String(ct) + "|" + String(pg) + "|" + String(pw) + "|" + String(pl) + "|" + String(ptw);
+  String playerData = cn + "|" + String(ct) + "|" + String(pg) + "|" + String(pw) + "|" + String(pl) + "|" + String(ptw) + "|" + String(pc);
 
   if (client.connect(serverIP, 80)) {
     Serial.print(F("Connected to "));
@@ -447,6 +746,7 @@ void writePlayerDataToServer(String cid, int ct, String cn, long pg, long pw, lo
     client.println("GET /?pu=&cardID=" + cid + "&data=" + playerData + " HTTP/1.1");
     client.println("Host: " + sIP);
     client.println("Connection: close");
+    client.println();
 
     Serial.print(F("Card data uploaded for: ")); Serial.println(cid);
     client.stop();
@@ -457,7 +757,6 @@ void writePlayerDataToServer(String cid, int ct, String cn, long pg, long pw, lo
     showMessageOnVFD("Card Update Fail", 0);
     delay(2000);
   }
-
 }
 
 // Read player data from remote server
@@ -499,7 +798,6 @@ void readPlayerDataFromServer(String cid)
       if (stringData == "\r") break; // end of headers - this might be an endless loop if response is malformed - look into this
     }
 
-    stringData = client.readStringUntil('\n'); // skip html and body
     stringData = client.readStringUntil('\n'); // this should contain our data
 
     if (stringData.indexOf("|") == -1) {
@@ -517,15 +815,16 @@ void readPlayerDataFromServer(String cid)
     {
       creditsToAdd = getValue(stringData, '|', 2);
     }
-    else
+    else if (cardType == 1)
     {
       playerTotalGames = getValue(stringData, '|', 2).toInt();
       playerGamesWon = getValue(stringData, '|', 3).toInt();
       playerGamesLost = getValue(stringData, '|', 4).toInt();
       playerTotalWon = getValue(stringData, '|', 5).toInt();
+      playerComps = getValue(stringData, '|', 6).toInt();
     }
 
-    Serial.print(F("Card data downloaded for: ")); Serial.print(cid);
+    Serial.print(F("Card data downloaded for: ")); Serial.println(cid);
     client.stop();
     return;
 
@@ -538,30 +837,27 @@ void readPlayerDataFromServer(String cid)
 
 // Write player data to SD card
 
-void writePlayerDataToSD(String filename, int ct, String cn, long pg, long pw, long pl, long ptw)
+bool writePlayerDataToSD(String cid, int ct, String cn, long pg, long pw, long pl, long ptw, float pc)
 {
-  sdFile = SD.open(filename, O_WRITE | O_CREAT | O_TRUNC);
+  String CardFilename = cid + ".txt";
+  sdFile = SD.open(CardFilename, O_WRITE | O_CREAT | O_TRUNC);
 
   // if the file opened okay, write to it:
   if (sdFile)
   {
-    sdFile.print("cardHolder=");
-    sdFile.println(cn);
-    sdFile.print("cardType=");
-    sdFile.println(ct);
-    sdFile.print("playerTotalGames=");
-    sdFile.println(pg);
-    sdFile.print("playerGamesWon=");
-    sdFile.println(pw);
-    sdFile.print("playerGamesLost=");
-    sdFile.println(pl);
-    sdFile.print("playerTotalWon=");
-    sdFile.println(ptw);
-
+    sdFile.print(F("cardHolder=")); sdFile.println(cn);
+    sdFile.print(F("cardType=")); sdFile.println(ct);
+    sdFile.print(F("playerTotalGames=")); sdFile.println(pg);
+    sdFile.print(F("playerGamesWon=")); sdFile.println(pw);
+    sdFile.print(F("playerGamesLost=")); sdFile.println(pl);
+    sdFile.print(F("playerTotalWon=")); sdFile.println(ptw);
+    sdFile.print(F("playerComps=")); sdFile.println(pc);
+    
     // Close the file
     sdFile.close();
 
     Serial.println(F("Player data updated successfully"));
+    return true;
   }
   else
   {
@@ -570,7 +866,25 @@ void writePlayerDataToSD(String filename, int ct, String cn, long pg, long pw, l
     showMessageOnVFD("Card Update Fail", 0);
     delay(2000);
   }
+  return false;
 }
+
+// Initialize the SD card
+
+void initSDCard()
+{
+  if (!SD.begin(4))
+  {
+    Serial.begin(9600);
+    Serial.println(F("SD card initialization failed"));
+    Serial.println(F("App Halted"));
+    while (1);
+  }
+}
+
+// ------------------------------------------------------------------------------------------------------------
+// Network Functions
+// ------------------------------------------------------------------------------------------------------------
 
 // Initialize the Ethernet Shield
 
@@ -579,21 +893,21 @@ void initEthernet()
   // Generate unique MAC Address
   getMacAddress(mac);
 
-  Ethernet.init(10);  // Most Arduino ethernet shields
-
+  Ethernet.init(10);  
+  
   // Start the Ethernet connection and the server
   if (useDHCP) Ethernet.begin(mac);
   else Ethernet.begin(mac, ip);
 
   // Check for Ethernet hardware present
   if (Ethernet.hardwareStatus() == EthernetNoHardware) {
-    Serial.println(F("Ethernet shield was not found. Remote Access will be unavailable."));
+    Serial.println(F("Ethernet shield was not found. Remote Access will not be available."));
 
     showMessageOnVFD("No Network", 0);
     delay(2000);
     return;
   }
-
+  
   Serial.print(F("IP address: "));
   Serial.println(Ethernet.localIP());
   ip = Ethernet.localIP();
@@ -602,7 +916,6 @@ void initEthernet()
   showMessageOnVFD("Net Connected", 0);
   showMessageOnVFD(ipStr.c_str(), 1);
   delay(2000);
-
 }
 
 // Check for DHCP renewals
@@ -644,21 +957,9 @@ void checkEthernet()
   }
 }
 
-// Initialize the SD card
-
-void initSDCard()
-{
-  Serial.println(F("Initializing SD card..."));
-  if (!SD.begin(4))
-  {
-    Serial.begin(9600);
-    Serial.println(F("SD card initialization failed"));
-    Serial.println(F("App Halted"));
-    while (1);
-  }
-
-  Serial.println(F("SD card initialization done"));
-}
+// ------------------------------------------------------------------------------------------------------------
+// Card and player functions
+// ------------------------------------------------------------------------------------------------------------
 
 // Check for player card insertion
 
@@ -687,14 +988,13 @@ bool checkForPlayerCard()
         showMessageOnVFD("CARD INSERTED", 0);
 
         if (localStorage) readPlayerDataFromSD(cardID, false);
-        else   readPlayerDataFromServer(cardID);
+        else readPlayerDataFromServer(cardID);
 
         lastCardID = cardID;
         Serial.println(F("Card Inserted"));
         Serial.print(F("Card ID: ")); Serial.println(lastCardID);
 
         // Can be Player 1, Admin 2, Bonus 3, or 0 if card data cannot be read from SD/Server
-        // Had this as a Switch statement and it would get skipped - so we do it this way
 
         if (cardType == 1)
         {
@@ -703,8 +1003,9 @@ bool checkForPlayerCard()
           Serial.print(F("Player Stats - Games played: ")); Serial.print(playerTotalGames);
           Serial.print(F(" Games Won: ")); Serial.print(playerGamesWon);
           Serial.print(F(" Games Lost: ")); Serial.print(playerGamesLost);
-          Serial.print(F(" Total Won: ")); Serial.println(playerTotalWon);
-
+          Serial.print(F(" Total Won: ")); Serial.print(playerTotalWon);
+          Serial.print(F(" Comps: ")); Serial.println(playerComps);
+          
           // Get current stats to figure out player session data when card is removed
           haveStartingStats = readGameData();
 
@@ -722,25 +1023,18 @@ bool checkForPlayerCard()
           }
 
           showMessageOnVFD("GOOD LUCK!", 0);
-          delay(2000);
-
-          strcpy(scrollBuffer, "                    ");
-          strcat(scrollBuffer, playerMessage);
-          strcat(scrollBuffer, "                    ");
-          
-          String tmp = String(scrollBuffer);
-          tmp.replace("[CARDHOLDER]", cardHolder);
-          tmp.replace("[CASINONAME]", casinoName);
-          tmp.toCharArray(scrollBuffer, tmp.length() + 1);
-
+          setupPlayerMessage(false);
           Serial.println(F("Ready for play"));
+          delay(2000);
           return true;
         }
 
         if (cardType == 2)
         {
-          // Reserved for future use
+          // Admin Menu
           Serial.println(F("Card Type: Admin"));
+          enterAdminMenu();
+            
           return true;
         }
 
@@ -750,10 +1044,9 @@ bool checkForPlayerCard()
           if (addCredits(creditsToAdd))
           {
             strcpy(scrollBuffer, "                    ");
-            strcat(scrollBuffer, "More credits means MORE FUN! Please remove the System Bonus Card now and insert your Player Card.");
+            strcat(scrollBuffer, bonusMessage);
             strcat(scrollBuffer, "                    ");
           }
-
           return true;
         }
 
@@ -763,8 +1056,6 @@ bool checkForPlayerCard()
     }
     else
     {
-      cardHolder = "";
-      lastCardID = "";
       return false;
     }
   }
@@ -779,10 +1070,7 @@ bool checkForPlayerCard()
       if (current && previous)
       {
         // Card Removed
-        strcpy(scrollBuffer, "                    ");
-        strcat(scrollBuffer, scrollingText);
-        strcat(scrollBuffer, "                    ");
-
+        setupAttractMessage();
         showMessageOnVFD("CARD REMOVED", 0);
         Serial.println(F("Card Removed"));
 
@@ -792,12 +1080,12 @@ bool checkForPlayerCard()
         if (haveStartingStats & haveEndingStats)
         {
           //  Update player stats
-          String CardFilename = lastCardID + ".txt";
-
+          
           playerTotalGames = playerTotalGames + (totalGames - tempTotalGames);
           playerGamesWon = playerGamesWon + (gamesWon - tempGamesWon);
           playerGamesLost = playerGamesLost + (gamesLost - tempGamesLost);
           playerTotalWon = playerTotalWon + (totalWon - tempTotalWon);
+          playerComps += ((totalIn - tempTotalIn) * compPercentage);
 
           // In case it overflows
           if (playerTotalGames < 0 | playerGamesWon < 0 | playerGamesLost < 0 | playerTotalWon < 0)
@@ -806,8 +1094,8 @@ bool checkForPlayerCard()
           }
           else
           {
-            if (localStorage) writePlayerDataToSD(CardFilename, cardType, cardHolder, playerTotalGames, playerGamesWon, playerGamesLost, playerTotalWon);
-            else writePlayerDataToServer(lastCardID, cardType, cardHolder, playerTotalGames, playerGamesWon, playerGamesLost, playerTotalWon);
+            if (localStorage) writePlayerDataToSD(lastCardID, cardType, cardHolder, playerTotalGames, playerGamesWon, playerGamesLost, playerTotalWon, playerComps);
+            else writePlayerDataToServer(lastCardID, cardType, cardHolder, playerTotalGames, playerGamesWon, playerGamesLost, playerTotalWon, playerComps);
           }
         }
         else
@@ -815,11 +1103,15 @@ bool checkForPlayerCard()
           if (cardType == 1) Serial.println(F("Could not read current stats from game. Player's current session will not be saved."));
         }
 
+        if (inTournament)
+        {
+          Serial.println(F("Card removed while in Tournament Play. Player is no longer in game."));
+          showMessageOnVFD("WAIT FOR HOST", 0);
+          lockMachine();
+        }
+        
         // Clear variables
         clearStats();
-        cardHolder = "";
-        lastCardID = "";
-        cardType = 1;
 
         delay(2000);
         return true;
@@ -844,10 +1136,84 @@ void clearStats()
   playerGamesWon = 0;
   playerGamesLost = 0;
   playerTotalWon = 0;
+  playerComps = 0;
+  startTime = 0;
+  endTime = 0;
   haveStartingStats = false;
+  cardHolder = "No Card Inserted";
+  cardID="";
+  lastCardID = "";
   cardType = 0;
   stringData = "";
+  inAdminMenu=false;
+  inPlayerMenu=false;
+  inTournament=false;
+  waitingForStart=false;
 }
+
+// ------------------------------------------------------------------------------------------------------------
+// Game Functions
+// ------------------------------------------------------------------------------------------------------------
+
+// Add X credits to game
+
+bool addCredits(String credits)
+{
+  String paddedValue = "";
+  byte ac[4];
+  credits.trim();
+  for (int i = 0; i < 8 - credits.length(); i++) paddedValue += "0";
+  paddedValue += credits;
+  ac[0] = dec2bcd(paddedValue.substring(0, 2).toInt());
+  ac[1] = dec2bcd(paddedValue.substring(2, 4).toInt());
+  ac[2] = dec2bcd(paddedValue.substring(4, 6).toInt());
+  ac[3] = dec2bcd(paddedValue.substring(6, 8).toInt());
+
+  if (LegacyBonus(0x01, ac[0], ac[1], ac[2], ac[3], 0x00))
+  {
+    if (!inTournament)
+    {
+      char b[10];
+      credits.toCharArray(b, credits.length() + 1);
+    
+      strcpy(fixedBuffer, b);
+      strcat(fixedBuffer, " credits");
+      Serial.print(credits); Serial.println(F(" credits added"));
+      showMessageOnVFD(fixedBuffer, 0);
+      showMessageOnVFD("added", 1);
+      delay(2000);
+      showMessageOnVFD(casinoName, 0);
+    }
+    return true;
+  }
+  else return false;
+}
+
+// Read the game meters
+
+bool readGameData()
+{
+  Serial.println(F("Reading meters from game"));
+  sasError = false;
+
+  Credits = pollMeters(mCredits);
+  delay(100);
+  totalIn = pollMeters(mCoinIn);
+  delay(100);
+  totalWon = pollMeters(mTotWon);
+  delay(100);
+  totalGames = pollMeters(mTotGames);
+  delay(100);
+  gamesWon = pollMeters(mgamesWon);
+  delay(100);
+  gamesLost = pollMeters(mgamesLost);
+
+  return !sasError;
+}
+
+// ------------------------------------------------------------------------------------------------------------
+// Display Functions
+// ------------------------------------------------------------------------------------------------------------
 
 // Show static message on VFD
 
@@ -855,7 +1221,7 @@ void showMessageOnVFD(char message[], int line)
 {
   if (onlyTITO) return;
 
-  if (line == 0) vfd.clear();
+  if (line == 0 && !inTournament) vfd.clear();
   int startPos = floor((displayWidth - strlen(message)*(displayWidth/displayCols))/2);
   vfd.setCursor(startPos, line * floor(displayHeight/displayRows));
   vfd.print(message);
@@ -874,6 +1240,44 @@ void scrollText(int printStart, int startLetter)
   vfd.print(" ");
   delay(scrollDelay);
 }
+
+bool setupAttractMessage()
+{ 
+  strcpy(scrollBuffer, "                    ");
+  strcat(scrollBuffer, attractMessage);
+  strcat(scrollBuffer, "                    ");
+
+  // Look for variables in message and replace
+  stringData = String(scrollBuffer);
+  stringData.replace("[CARDHOLDER]", cardHolder);
+  stringData.replace("[CASINONAME]", casinoName);
+  stringData.toCharArray(scrollBuffer, stringData.length() + 1);
+  resetScroll=true;
+  return true;
+}
+
+bool setupPlayerMessage(bool skipBuffer)
+{
+  if (!skipBuffer) {
+    strcpy(scrollBuffer, "                    ");
+    strcat(scrollBuffer, playerMessage);
+  }
+  strcat(scrollBuffer, "                    ");
+  
+  // Look for variables in message and replace
+  stringData = String(scrollBuffer);
+  stringData.replace("[CARDHOLDER]", cardHolder);
+  stringData.replace("[CASINONAME]", casinoName);  
+  int creds = playerComps;
+  if (playerComps>1 and !skipBuffer) stringData += "You have " + String(creds) + " Comp Credits available! Press [ENT] to access Player Menu.                    ";
+  stringData.toCharArray(scrollBuffer, stringData.length() + 1); 
+  resetScroll=true;
+  return true;
+}
+
+// ------------------------------------------------------------------------------------------------------------
+// Misc Functions
+// ------------------------------------------------------------------------------------------------------------
 
 // Get a value in a string of data split by a separator character
 
@@ -941,6 +1345,8 @@ String urlDecode(String str)
   return decodedString;
 }
 
+// Get a MAC Address for ethernet
+
 void getMacAddress(byte* macAddr) {
   int eepromOffset = 128;
   int b = 0;
@@ -957,6 +1363,26 @@ void getMacAddress(byte* macAddr) {
   }
 }
 
+// Set Time
+
+void processSyncMessage(unsigned long pctime)
+{
+  const unsigned long DEFAULT_TIME = 1613347200; // 2-15-2021 00:00:00 GMT
+ 
+  if( pctime >= DEFAULT_TIME) { // check the integer is a valid time (greater than Jan 1 2013)
+  setTime(pctime); // Sync Arduino clock to the time received from the host
+  Serial.println("Arduino clock set by host");
+  }
+}
+
+// Not used yet
+
+time_t requestSync()
+{
+  Serial.println("Arduino time sync may be off");
+  return 0;
+}
+
 // ------------------------------------------------------------------------------------------------------------
 // HTML Server
 // ------------------------------------------------------------------------------------------------------------
@@ -965,18 +1391,17 @@ void htmlPoll()
 {
   EthernetClient client = server.available();
   if (!client) return;
-
+  client.setConnectionTimeout(1000);
+  
   if (client.connected()) // If client is present and connected
   {
-    showMessageOnVFD("Remote Access", 0);
-
     String url = "";
     String request = "";
     String querystring = "";
+    bool reqResult = false;
 
-    stringData = client.readStringUntil('\r');   // Get the first line of request
+    stringData = client.readStringUntil('\n'); // Get the first line of request
     while (client.available()) client.read(); // Get the rest of the header and discard
-    client.flush();
 
     request = getValue(stringData, ' ', 1); // Get the request - we only care about GETs
     url = getValue(request, '?', 0);
@@ -990,141 +1415,235 @@ void htmlPoll()
     {
       if (command == "ps") // Player Statistics
       {
-        if (cardHolder != "")
-        {
-          readGameData();
+        client.print(htmlHeader);
 
-          client.print(htmlHeader);
-          client.print("<head><meta name='viewport' content='initial-scale=1.0'><style>body {font-family: Tahoma;}</style></head><body><h2>PLAYER STATISTICS: " + cardHolder + "</h2><br>(when card was inserted)<br><br>");
-          client.print("Total Games<br>" + String(playerTotalGames + (totalGames - tempTotalGames)) + "<br>Games Won<br>" + String(playerGamesWon + (gamesWon - tempGamesWon)) + "<br>Games Lost<br>" + String(playerGamesLost + (gamesLost - tempGamesLost)) + "<br>Total Won<br>" + String(playerTotalWon + (totalWon - tempTotalWon)) + "<br>");
-          client.print("</body>");
-          client.print(htmlFooter);
+        if (cardType == 1)
+        {
+          client.print(F("<head><meta name='viewport' content='initial-scale=1.0'><style>body {font-family: Tahoma;}</style></head><body><h2>PLAYER STATISTICS: "));
+          if (readGameData())
+          {
+            client.print(cardHolder + "</h2> (Live)<br><br>");
+            client.print("Total Games<br>" + String(playerTotalGames + (totalGames - tempTotalGames)) + "<br>Games Won<br>" + String(playerGamesWon + (gamesWon - tempGamesWon)) + "<br>Games Lost<br>" + String(playerGamesLost + (gamesLost - tempGamesLost)) + "<br>Total Won<br>" + String(playerTotalWon + (totalWon - tempTotalWon)) + "<br>Comps Earned<br>" + String(playerComps + ((totalIn - tempTotalIn) * compPercentage)) + "<br>");
+          }
+          else
+          {
+            client.print(cardHolder + "</h2> (Saved)<br><br>");
+            client.print("Total Games<br>" + String(playerTotalGames) + "<br>Games Won<br>" + String(playerGamesWon) + "<br>Games Lost<br>" + String(playerGamesLost) + "<br>Total Won<br>" + String(playerTotalWon) + "<br>Comps Earned<br>" + String(playerComps) + "<br>");
+          }
         }
         else
         {
-          client.print(htmlHeader);
-          client.print("<head><style>body {font-family: Tahoma;}</style></head><body><h2>NO PLAYER CARD INSERTED</h2><br>");
-          client.print("</body>");
-          client.print(htmlFooter);
+          client.print(F("<head><style>body {font-family: Tahoma;}</style></head><body><h2>NO PLAYER CARD INSERTED</h2><br>"));
         }
-
+        
+        client.print(F("</body>"));
+        client.print(htmlFooter);
         client.stop();
-        showMessageOnVFD(casinoName, 0);
         return;
       }
 
       if (command == "ds") // Game Statistics
       {
-        readGameData();
-
         client.print(htmlHeader);
-        client.print("<head><meta name='viewport' content='initial-scale=1.0'><style>body {font-family: Tahoma;}</style></head><body><h2>GAME STATISTICS</h2><br>");
-        client.print("Credits<br>" + String(Credits) + "<br>Total In<br>" + String(totalIn) + "<br>Total Won<br>" + String(totalWon) + "<br>Total Games<br>" + String(totalGames) + "<br>Games Won<br>" + String(gamesWon) + "<br>Games Lost<br>" + String(gamesLost) + "<br>");
-        client.print("</body>");
-        client.print(htmlFooter);
-
-        client.stop();
-        showMessageOnVFD(casinoName, 0);
-        return;
-      }
-
-      if (command == "pd")  // Download player card data
-      {
-        String cardID = getValue(getValue(querystring, '&', 1), '=', 1);
-        String playerData = readPlayerDataFromSD(cardID, true);
-
-        client.print(htmlHeader);
-        client.print("<head></head><body>\r\n");
-        for (int i = 0; i < 6; i++) {
-          client.print(getValue(playerData, '|', i) + "|");
+        if (readGameData())
+        {
+          client.print(F("<head><meta name='viewport' content='initial-scale=1.0'><style>body {font-family: Tahoma;}</style></head><body><h2>GAME STATISTICS</h2><br>"));
+          client.print("Credits<br>" + String(Credits) + "<br>Total In<br>" + String(totalIn) + "<br>Total Won<br>" + String(totalWon) + "<br>Total Games<br>" + String(totalGames) + "<br>Games Won<br>" + String(gamesWon) + "<br>Games Lost<br>" + String(gamesLost) + "<br>");
         }
-        client.print("\r\n</body>");
+        else
+        {
+          client.print(F("<head><style>body {font-family: Tahoma;}</style></head><body><h2>GAME STATISTICS NOT AVAILABLE</h2><br>"));
+        }
+
+        client.print(F("</body>"));
         client.print(htmlFooter);
-        Serial.print(F("Card Data Request: ")); Serial.println(cardID);
         client.stop();
-        showMessageOnVFD(casinoName, 0);
         return;
       }
 
+      if (command == "pd")  // Request player card data
+      {
+        String cid = getValue(getValue(querystring, '&', 1), '=', 1);
+        client.print(textHeader);
+            
+        if (cardType == 1 && cid == "0")
+        {
+          if (readGameData())
+          {
+            client.print(cardHolder + "|" + String(playerTotalGames + (totalGames - tempTotalGames)) + "|" + String(playerGamesWon + (gamesWon - tempGamesWon)) + "|" + String(playerGamesLost + (gamesLost - tempGamesLost)) + "|" + String(playerTotalWon + (totalWon - tempTotalWon)) + "|" + String(playerComps + ((totalIn - tempTotalIn) * compPercentage)));
+          }
+          else
+          {
+            client.print(cardHolder + "|" + String(playerTotalGames) + "|" + String(playerGamesWon) + "|" + String(playerGamesLost) + "|" + String(playerTotalWon) + "|" + String(playerComps));
+          }
+          Serial.println(F("Current player data requested by host"));
+        }
+        else
+        {        
+          if (cid != "0" && cid != "")
+          {
+            String playerData = readPlayerDataFromSD(cid, true);
+    
+            for (int i = 0; i < 7; i++) {
+              client.print(getValue(playerData, '|', i) + "|");
+            }
+            Serial.print(F("Card Data Request: ")); Serial.println(cid);
+          }
+          else
+          {
+            client.print(F("||||||"));
+          }
+        }
+
+        client.stop();
+        return;
+      }
+
+      if (command == "gd")  // Request game data
+      {
+        int clockSync = urlDecode(getValue(getValue(querystring, '&', 0), '=', 1)).toInt();
+        
+        client.print(textHeader);
+        
+        if (clockSync == 1) client.print(gameName + "|" + now() + "||||||");
+        else if (readGameData())
+        {
+          client.print(gameName + "|" + now() +  "|" + String(Credits) + "|" + String(totalIn) + "|" + String(totalWon) + "|" + String(totalGames) + "|" + String(gamesWon) + "|" + String(gamesLost));
+        }
+        else
+        {
+          client.print(gameName + "|" + now() + "||||||");
+        }        
+
+        client.stop();
+        Serial.println(F("Game data requested by host"));
+        return;
+      }
+
+      if (command == "et") // End tournament and return score
+      {
+        exitTournamentMode();
+        client.print(textHeader);
+        client.print(cardHolder + "|" + String(tournamentScore));
+        client.stop();
+        Serial.println(F("Sent tournament data to host"));
+        return;
+      }
+
+      // All of the remaining commands return a single status or a result code
+      
       if (command == "pu")  // Upload player card data to server
       {
-        String cardID = getValue(getValue(querystring, '&', 1), '=', 1);
+        String cid = getValue(getValue(querystring, '&', 1), '=', 1);
         String playerData = getValue(getValue(querystring, '&', 2), '=', 1);
 
-        writePlayerDataToSD(cardID + ".txt", getValue(playerData, '|', 1).toInt(), urlDecode(getValue(playerData, '|', 0)), getValue(playerData, '|', 2).toInt(), getValue(playerData, '|', 3).toInt(), getValue(playerData, '|', 4).toInt(), getValue(playerData, '|', 5).toInt());
-        Serial.print(F("Card Data Updated: ")); Serial.println(cardID);
+        reqResult = writePlayerDataToSD(cid, getValue(playerData, '|', 1).toInt(), urlDecode(getValue(playerData, '|', 0)), getValue(playerData, '|', 2).toInt(), getValue(playerData, '|', 3).toInt(), getValue(playerData, '|', 4).toInt(), getValue(playerData, '|', 5).toInt(), getValue(playerData, '|', 6).toInt());
       }
 
-      if (command == "mo") mute();
-      if (command == "mt") unmute();
-      if (command == "lk") lockMachine();
-      if (command == "uk") unlockMachine();
-      if (command == "eb") enableBV();
-      if (command == "db") disableBV();
-      if (command == "rh") resetHandpay();
-      if (command == "ec") changeButtonToCredits(true);
-      if (command == "dc") changeButtonToCredits(false);
-      if (command == "pn" && cardHolder != "") cardHolder=urlDecode(getValue(getValue(querystring, '&', 0), '=', 1));
+      if (command == "mo") reqResult=mute();
+      if (command == "mt") reqResult=unMute();
+      if (command == "lk") reqResult=lockMachine();
+      if (command == "uk") reqResult=unlockMachine();
+      if (command == "eb") reqResult=enableBV();
+      if (command == "db") reqResult=disableBV();
+      if (command == "rh") reqResult=resetHandpay();
+      if (command == "ec") reqResult=changeButtonToCredits(true);
+      if (command == "dc") reqResult=changeButtonToCredits(false);
+      if (command == "pn" && cardID == 1) cardHolder=urlDecode(getValue(getValue(querystring, '&', 0), '=', 1));
 
       if (command == "ud") // Update Ticket Data
       {
-        String location = urlDecode(getValue(getValue(querystring, '&', 0), '=', 1));
-        String address1 = urlDecode(getValue(getValue(querystring, '&', 1), '=', 1));
-        String address2 = urlDecode(getValue(getValue(querystring, '&', 2), '=', 1));
+        String location = urlDecode(getValue(getValue(querystring, '&', 1), '=', 1));
+        String address1 = urlDecode(getValue(getValue(querystring, '&', 2), '=', 1));
+        String address2 = urlDecode(getValue(getValue(querystring, '&', 3), '=', 1));
 
-        SetTicketData(location, address1, address2);
+        reqResult=SetTicketData(location, address1, address2);
         showMessageOnVFD("Ticket Updated", 0);
         delay(2000);
       }
+ 
+      if (command == "tr")  // Tournament Results
+      {
+        String customMsg = "                    " + getValue(getValue(urlDecode(querystring), '&', 1), '=', 1);
+        customMsg.toCharArray(scrollBuffer, customMsg.length() + 1);
+        reqResult=setupPlayerMessage(true);
+        reqResult = unlockMachine();
+      }
 
+      if (command == "st")  // Start Tournament Mode
+      {
+        String credits = urlDecode(getValue(getValue(querystring, '&', 1), '=', 1));
+        startTime = urlDecode(getValue(getValue(querystring, '&', 2), '=', 1)).toInt();
+        endTime = urlDecode(getValue(getValue(querystring, '&', 3), '=', 1)).toInt();
+
+        reqResult=startTournamentMode(credits);        
+      }
+      
+      if (command == "cl")  // Set Arduino Clock
+      {
+        unsigned long pctime = getValue(getValue(querystring, '&', 0), '=', 1).toInt();
+        processSyncMessage(pctime);
+        reqResult=true;
+      }
+      
+      if (command == "dt")  // Set DateTime on Game
+      {
+        String datetime = getValue(getValue(querystring, '&', 0), '=', 1);
+        if (datetime.length()==14) reqResult = SetDateTime(datetime);
+      }
+      
       if (command == "cr")  // Add Credits to game
       {
         String credits = getValue(getValue(querystring, '&', 1), '=', 1);
-        addCredits(credits);
+        reqResult=addCredits(credits);
       }
 
       if (command == "cm")  // Update Scrolling Message
       {
-        String customMsg = getValue(getValue(urlDecode(querystring), '&', 1), '=', 1);
-        customMsg.toCharArray(scrollingText, customMsg.length() + 1);
-        strcpy(scrollBuffer, "                    ");
-        strcat(scrollBuffer, scrollingText);
-        strcat(scrollBuffer, "                    ");
+        String customMsg = "                    " + getValue(getValue(urlDecode(querystring), '&', 1), '=', 1);
+        String msgID = getValue(getValue(urlDecode(querystring), '&', 0), '=', 1);
+        
+        if (msgID == "1") {
+          customMsg.toCharArray(scrollBuffer, customMsg.length() + 1);
+          reqResult=setupPlayerMessage(true);
+        }
+        else {
+          customMsg.toCharArray(attractMessage, customMsg.length() + 1);
+          reqResult=setupAttractMessage();
+        }
         Serial.print(F("Scrolling message updated: ")); Serial.println(customMsg);
       }
 
-      client.print(htmlHeader);
-      client.print("<head><style>body {font-family: Tahoma;}</style></head><body><h2>OK</h2><br></body>");
-      client.print(htmlFooter);
+      // Return status/result to host     
+      client.print(textHeader); 
+      if (reqResult) client.print(F("OK"));
+      else client.print(F("ERROR"));
       client.stop();
-      showMessageOnVFD(casinoName, 0);
+      if (!inTournament && !isLocked) showMessageOnVFD(casinoName, 0);
       return;
     }
     else if (url.equals("/"))
     {
       // Show web interface
 
-      String  cp = "No Card Inserted";
-      if (cardHolder != "") cp = cardHolder;
-
       sdFile = SD.open("index.htm", O_READ);
       if (sdFile)
       {
         client.print(htmlHeader);
-        client.print("<head><meta name='viewport' content='initial-scale=1.0'>");
-        client.print("<style>body {font-family: Tahoma;} button {font-family: inherit; font-size: 1.0em; background-color: #008CBA; color: white; border: none; text-decoration: none; border-radius: 4px; transition-duration: 0.4s;} button:hover { background-color: white; color: black; border: 2px solid #008CBA; } td { padding-left: 7.5px; padding-right: 7.5px; } </style></head><body>");
-        client.print("<div style='max-width: 100%; margin: auto; text-align:center;'>");
-        client.print("<h2>Arduino TITO and Player Tracking</h2>");
+        client.print(F("<head><meta name='viewport' content='initial-scale=1.0'>"));
+        client.print(F("<style>body {font-family: Tahoma;} button {font-family: inherit; font-size: 1.0em; background-color: #008CBA; color: white; border: none; text-decoration: none; border-radius: 4px; transition-duration: 0.4s;} button:hover { background-color: white; color: black; border: 2px solid #008CBA; } td { padding-left: 7.5px; padding-right: 7.5px; } </style></head><body>"));
+        client.print(F("<div style='max-width: 100%; margin: auto; text-align:center;'>"));
+        client.print(F("<h2>Arduino TITO and Player Tracking</h2>"));
         client.print("Game Name: <b>" + gameName + "</b>&nbsp;&nbsp;&nbsp;");
         client.print("IP Address: <b>" + ipStr + "</b><br>");
-        client.print("Current player: <b> " + cp + "</b></div>");
+        client.print("Current player: <b> " + cardHolder + "</b></div>");
 
         while (sdFile.available()) {
           client.print(sdFile.readStringUntil('\n'));
         }
 
         sdFile.close();
-        client.print("</div></body>");
+        client.print(F("</div></body>"));
         client.print(htmlFooter);
         Serial.println(F("Web Interface Loaded"));
       }
@@ -1133,13 +1652,13 @@ void htmlPoll()
         // UI Not available (SD Card error?)
 
         client.print(htmlHeader);
-        client.print("<head><meta name='viewport' content='initial-scale=1.0'><style>body {font-family: Tahoma;}</style></head><body>");
-        client.print("<div style='max-width: 100%; margin: auto; text-align:center;'>");
-        client.print("<h2>Arduino TITO and Player Tracking</h2>");
+        client.print(F("<head><meta name='viewport' content='initial-scale=1.0'><style>body {font-family: Tahoma;}</style></head><body>"));
+        client.print(F("<div style='max-width: 100%; margin: auto; text-align:center;'>"));
+        client.print(F("<h2>Arduino TITO and Player Tracking</h2>"));
         client.print("Game Name: <b>" + gameName + "</b>&nbsp;&nbsp;&nbsp;");
         client.print("IP Address: <b>" + ipStr + "</b><br><hr>");
-        client.print("Unable to load User Interface!<br>This device can still be controlled remotely with the BETTORSlots Android/IOS apps.<br>");
-        client.print("</div></body>");
+        client.print(F("Unable to load User Interface!<br>This device can still be controlled remotely with the Game Manager Windows app or the BETTORSlots Android/IOS apps.<br>"));
+        client.print(F("</div></body>"));
         client.print(htmlFooter);
         Serial.println(F("Web Interface failed to load"));
       }
@@ -1147,7 +1666,7 @@ void htmlPoll()
     else
     {
       // Everything else is a 404
-      client.print("HTTP/1.1 404 Not Found\r\n\r\n");
+      client.print(F("HTTP/1.1 404 Not Found\r\n\r\n"));
     }
 
     client.stop();
@@ -1175,7 +1694,10 @@ void generalPoll()
   UCSR1B = 0b10011100;
 
   delay(10);  // Found to be necessary on some machines to wait for data on the serial bus
-  if (Serial1.available() > 0) Serial1.readBytes(SASEvent, sizeof(SASEvent));
+  if (Serial1.available() > 0) {
+    Serial1.readBytes(SASEvent, sizeof(SASEvent));
+    if (sasOnline=false) sasOnline=true;
+  }
 
   if (SASEvent[0] != 0x1F && SASEvent[0] != 0x00 && SASEvent[0] != 0x01 && SASEvent[0] != 0x80 && SASEvent[0] != 0x81 && SASEvent[0] != 0x7C) {
     Serial.print(F("SAS Event Received: ")); Serial.print(SASEvent[0], HEX); Serial.print(F(" "));
@@ -1242,6 +1764,30 @@ byte waitForResponse(byte & waitfor, byte * ret, int sz)
   return ret;
 }
 
+bool waitForACK(byte waitfor, char msg[])
+{
+  int wait = 0;
+
+  while (Serial1.read() != waitfor && wait < 3000) {
+    delay(1);
+    wait += 1;
+  }
+
+  if (wait >= 3000) {
+      showMessageOnVFD("GAME TIMEOUT", 0); 
+      Serial.println(F("Timeout waiting for ACK"));
+      delay(2000);
+      return false;
+  }
+  
+  Serial.println(msg);
+  if (!inTournament) {
+    showMessageOnVFD(msg, 0);
+    delay(2000);
+  }
+  return true;
+}
+
 long pollMeters(byte * meter)
 {
   byte meterData[8];
@@ -1257,66 +1803,64 @@ long pollMeters(byte * meter)
   return sMeter.toInt();
 }
 
-void lockMachine()
+bool lockMachine()
 {
-  SendTypeR(LOCK, sizeof(LOCK));
-  Serial1.readBytes(returnStatus, sizeof(returnStatus));
-  Serial.println(F("Machine locked"));
+  SendTypeS(LOCK, sizeof(LOCK));
+  isLocked=true;
+  return waitForACK(SASAdr,"Game Locked");
 }
 
-void unlockMachine()
+bool unlockMachine()
 {
-  SendTypeR(ULOCK, sizeof(LOCK));
-  Serial1.readBytes(returnStatus, sizeof(returnStatus));
-  Serial.println(F("Machine Unlocked"));
+  SendTypeS(ULOCK, sizeof(LOCK));
+  isLocked=false;
+  return waitForACK(SASAdr,"Game Unlocked");
 }
 
-void mute()
+bool mute()
 {
-  SendTypeR(MUTE, sizeof(MUTE));
-  Serial1.readBytes(returnStatus, sizeof(returnStatus));
-  Serial.println(F("Machine muted"));
+  SendTypeS(MUTE, sizeof(MUTE));
+  return waitForACK(SASAdr,"Sound Off");
 }
 
-void unmute()
+bool unMute()
 {
-  SendTypeR(UMUTE, sizeof(UMUTE));
-  Serial1.readBytes(returnStatus, sizeof(returnStatus));
-  Serial.println(F("Machine unmuted"));
+  SendTypeS(UMUTE, sizeof(UMUTE));
+  return waitForACK(SASAdr,"Sound On");
 }
 
-void disableBV()
+bool disableBV()
 {
-  SendTypeR(DBILL, sizeof(DBILL));
-  Serial1.readBytes(returnStatus, sizeof(returnStatus));
-  Serial.println(F("Bill Validator Disabled"));
+  SendTypeS(DBILL, sizeof(DBILL));
+  return waitForACK(SASAdr,"BV Disabled");
 }
 
-void enableBV()
+bool enableBV()
 {
-  SendTypeR(EBILL, sizeof(EBILL));
-  Serial1.readBytes(returnStatus, sizeof(returnStatus));
-  Serial.println(F("Bill Validator Enabled"));
+  SendTypeS(EBILL, sizeof(EBILL));
+  return waitForACK(SASAdr,"BV Enabled");
 }
 
-void changeButtonToCredits(bool e)
+bool changeButtonToCredits(bool e)
 {
   if (e) {
     changeToCredits = true;
     Serial.println(F("Change to Credits Enabled"));
+    showMessageOnVFD("C-to-C Enabled", 0);
   }
   else
   {
     changeToCredits = false;
     Serial.println(F("Change to Credits Disabled"));
+    showMessageOnVFD("C-to-C Disabled", 0);
   }
+  return true;
 }
 
-void resetHandpay()
+bool resetHandpay()
 {
   SendTypeS(RHP, sizeof(RHP));
-  waitForResponse(RHP[1], COS, sizeof(COS));
-  Serial.println(F("Handpay reset"));
+  return waitForACK(SASAdr,"Handpay reset");
 }
 
 void getHandpayInfo()
@@ -1340,7 +1884,7 @@ void SystemValidation()
 
   if (!sasError)
   { 
-    SVN [0] = SASAdr;                    // Adress
+    SVN [0] = SASAdr;                    // Address
     SVN [1] = 0x58;                      // Receive Validation Number
     SVN [2] = 0x01;                      // Validation ID
     SVN [3] = COT [2];                   // Cashout Type
@@ -1372,7 +1916,7 @@ void SystemValidation()
   }
 }
 
-void SetTicketData(String loc, String addr1, String addr2)
+bool SetTicketData(String loc, String addr1, String addr2)
 {
   byte bLoc[loc.length() + 1];
   byte bAddr1[addr1.length() + 1];
@@ -1401,6 +1945,7 @@ void SetTicketData(String loc, String addr1, String addr2)
   SendTypeS(ticketData, sizeof(ticketData));
   waitForResponse(ticketData[1], TDR, sizeof(TDR));
   Serial.println(F("Updated Cashout Ticket Data"));
+  return true;
 }
 
 void CashOutState()
@@ -1410,10 +1955,26 @@ void CashOutState()
   Serial.println(F("Cashout ticket has been printed"));
 }
 
-void LegacyBonus (byte SASAdr, byte Amount1, byte Amount2, byte Amount3, byte Amount4, byte Type)
+bool SetDateTime(String datetime)
 {
-  returnStatus[0] = 0x00;
+  datetime.trim();
+  
+  TIM [0] = SASAdr;
+  TIM [1] = 0x7F;
+  TIM [2] = dec2bcd(datetime.substring(0, 2).toInt());
+  TIM [3] = dec2bcd(datetime.substring(2, 4).toInt());
+  TIM [4] = dec2bcd(datetime.substring(4, 6).toInt());
+  TIM [5] = dec2bcd(datetime.substring(6, 8).toInt());
+  TIM [6] = dec2bcd(datetime.substring(8, 10).toInt());
+  TIM [7] = dec2bcd(datetime.substring(10, 12).toInt());
+  TIM [8] = dec2bcd(datetime.substring(12, 14).toInt());
 
+  SendTypeS(TIM, sizeof(TIM));
+  return waitForACK(SASAdr,"DateTime set by host");
+}
+
+bool LegacyBonus (byte SASAdr, byte Amount1, byte Amount2, byte Amount3, byte Amount4, byte Type)
+{
   LBS [0] = SASAdr;
   LBS [1] = 0x8A;
   LBS [2] = Amount1;
@@ -1423,7 +1984,7 @@ void LegacyBonus (byte SASAdr, byte Amount1, byte Amount2, byte Amount3, byte Am
   LBS [6] = Type;
 
   SendTypeS(LBS, sizeof(LBS));
-  Serial1.readBytes(returnStatus, sizeof(returnStatus));
+  return waitForACK(SASAdr, "");
 }
 
 void RedeemTicket()
@@ -1443,25 +2004,25 @@ void RedeemTicket()
   {  
     Serial.println(F("Received ticket data"));
     
-    TRS [0] = 0x01;                              //' Addres
-    TRS [1] = 0x71;                              //' Command
-    TRS [2] = 0x10;                              //' Number of Bytes
-    TRS [3] = 0x00;                              //' Transfer Code
-    TRS [4] = TEQ [14];                          //' Ticket Amount BCD1  LSB
-    TRS [5] = TEQ [15];                          //' Ticket Amount BCD2
-    TRS [6] = TEQ [16];                          //' Ticket Amount BCD3
-    TRS [7] = TEQ [17];                          //' Ticket Amount BCD4
-    TRS [8] = TEQ [18];                          //' Ticket Amount BCD5  MSB
-    TRS [9] = 0x00;                              //' Parsing Code
-    TRS [10] = TEQ [10];                         //' Validation BCD1
-    TRS [11] = TEQ [11];                         //' Validation BCD2
-    TRS [12] = TEQ [12];                         //' Validation BCD3
-    TRS [13] = TEQ [13];                         //' Validation BCD4
-    TRS [14] = TEQ [14];                         //' Validation BCD5
-    TRS [15] = TEQ [15];                         //' Validation BCD6
-    TRS [16] = TEQ [16];                         //' Validation BCD7
-    TRS [17] = TEQ [17];                         //' Validation BCD8
-    TRS [18] = TEQ [18];                         //' Validation BCD9
+    TRS [0] = 0x01;                              // Address
+    TRS [1] = 0x71;                              // Command
+    TRS [2] = 0x10;                              // Number of Bytes
+    TRS [3] = 0x00;                              // Transfer Code
+    TRS [4] = TEQ [14];                          // Ticket Amount BCD1  LSB
+    TRS [5] = TEQ [15];                          // Ticket Amount BCD2
+    TRS [6] = TEQ [16];                          // Ticket Amount BCD3
+    TRS [7] = TEQ [17];                          // Ticket Amount BCD4
+    TRS [8] = TEQ [18];                          // Ticket Amount BCD5  MSB
+    TRS [9] = 0x00;                              // Parsing Code
+    TRS [10] = TEQ [10];                         // Validation BCD1
+    TRS [11] = TEQ [11];                         // Validation BCD2
+    TRS [12] = TEQ [12];                         // Validation BCD3
+    TRS [13] = TEQ [13];                         // Validation BCD4
+    TRS [14] = TEQ [14];                         // Validation BCD5
+    TRS [15] = TEQ [15];                         // Validation BCD6
+    TRS [16] = TEQ [16];                         // Validation BCD7
+    TRS [17] = TEQ [17];                         // Validation BCD8
+    TRS [18] = TEQ [18];                         // Validation BCD9
   
     Serial.println(F("Authorizing ticket"));
     SendTypeS(TRS, sizeof(TRS));  
@@ -1491,7 +2052,7 @@ void RedeemTicket()
 
 void ConfirmRedeem()
 {
-  SendTypeR(transComplete, sizeof(transComplete));
+  SendTypeS(transComplete, sizeof(transComplete));
   waitForResponse(transComplete[1], TEQ, sizeof(TEQ));
 
   // Report on common responses
