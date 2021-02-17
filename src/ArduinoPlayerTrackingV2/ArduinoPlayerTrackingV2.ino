@@ -1074,6 +1074,12 @@ bool checkForPlayerCard()
         showMessageOnVFD("CARD REMOVED", 0);
         Serial.println(F("Card Removed"));
 
+        if (cardType == 2) {
+          exitMenu();
+          clearStats();
+          return;         
+        }
+
         bool haveEndingStats = false;
         if (cardType == 1 & haveStartingStats) haveEndingStats = readGameData();
 
