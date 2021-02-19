@@ -1,5 +1,5 @@
 /*
-  Arduino TITO and Player Tracking v2.0.20210216
+  Arduino TITO and Player Tracking v2.0.20210219
   by Marc R. Davis - Copyright (c) 2020-2021 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
@@ -100,6 +100,7 @@ float playerComps = 0;
 float compPercentage = 0.01; // Set to zero to disable comps
 unsigned long startTime = 0;
 unsigned long endTime = 0;
+unsigned long lastUpdate;
 
 bool logToSerial = 1;
 bool haveStartingStats = false;
@@ -294,7 +295,7 @@ void setup()
   Serial1.setTimeout(200);
   pinMode(LED, OUTPUT);
     
-  Serial.println(F("Arduino TITO and Player Tracking - Version 2.0.20210216 By Marc R. Davis"));
+  Serial.println(F("Arduino TITO and Player Tracking - Version 2.0.20210219 By Marc R. Davis"));
   Serial.println(F("Initializing..."));
 
   // Setup Attract Scroll
@@ -341,6 +342,14 @@ void loop()
 {
   // Check for DHCP renewal
   checkEthernet();
+
+  // Update player stats every 2 min if card is inserted
+  if (millis() - lastUpdate >= 2*60*1000UL)
+  {
+   lastUpdate = millis();  //reset 
+   updatePlayerStats();
+  }
+  
   resetScroll=false;
 
   if (onlyTITO)
@@ -1080,34 +1089,7 @@ bool checkForPlayerCard()
           return;         
         }
 
-        bool haveEndingStats = false;
-        if (cardType == 1 & haveStartingStats) haveEndingStats = readGameData();
-
-        if (haveStartingStats & haveEndingStats)
-        {
-          //  Update player stats
-          
-          playerTotalGames = playerTotalGames + (totalGames - tempTotalGames);
-          playerGamesWon = playerGamesWon + (gamesWon - tempGamesWon);
-          playerGamesLost = playerGamesLost + (gamesLost - tempGamesLost);
-          playerTotalWon = playerTotalWon + (totalWon - tempTotalWon);
-          playerComps += ((totalIn - tempTotalIn) * compPercentage);
-
-          // In case it overflows
-          if (playerTotalGames < 0 | playerGamesWon < 0 | playerGamesLost < 0 | playerTotalWon < 0)
-          {
-            Serial.println(F("Player stats for session are invalid and will not be saved!"));
-          }
-          else
-          {
-            if (localStorage) writePlayerDataToSD(lastCardID, cardType, cardHolder, playerTotalGames, playerGamesWon, playerGamesLost, playerTotalWon, playerComps);
-            else writePlayerDataToServer(lastCardID, cardType, cardHolder, playerTotalGames, playerGamesWon, playerGamesLost, playerTotalWon, playerComps);
-          }
-        }
-        else
-        {
-          if (cardType == 1) Serial.println(F("Could not read current stats from game. Player's current session will not be saved."));
-        }
+        updatePlayerStats();
 
         if (inTournament)
         {
@@ -1126,6 +1108,49 @@ bool checkForPlayerCard()
   }
 
   return false;
+}
+
+// Update player stats
+
+void updatePlayerStats()
+{
+  if (cardType != 1) return;
+  
+  if (haveStartingStats)
+  {
+    if (readGameData())
+    {  
+      //  Update player stats      
+      playerTotalGames += (totalGames - tempTotalGames);
+      playerGamesWon += (gamesWon - tempGamesWon);
+      playerGamesLost += (gamesLost - tempGamesLost);
+      playerTotalWon =+ (totalWon - tempTotalWon);
+      playerComps += ((totalIn - tempTotalIn) * compPercentage);
+  
+      // Update temp values
+      tempTotalIn = totalIn;
+      tempTotalWon = totalWon;
+      tempTotalGames = totalGames;
+      tempGamesWon = gamesWon;
+      tempGamesLost = gamesLost;
+    
+      // In case it overflows
+      if (playerTotalGames < 0 | playerGamesWon < 0 | playerGamesLost < 0 | playerTotalWon < 0)
+      {
+        Serial.println(F("Player stats for session are invalid and will not be saved!"));
+      }
+      else
+      {
+        Serial.println(F("Updating player stats"));
+        if (localStorage) writePlayerDataToSD(lastCardID, cardType, cardHolder, playerTotalGames, playerGamesWon, playerGamesLost, playerTotalWon, playerComps);
+        else writePlayerDataToServer(lastCardID, cardType, cardHolder, playerTotalGames, playerGamesWon, playerGamesLost, playerTotalWon, playerComps);
+      }
+    }
+    else
+    {
+      Serial.println(F("Could not read current stats from game. Player's current session will not be saved."));
+    } 
+  } 
 }
 
 // Clear player data variables
@@ -1702,7 +1727,7 @@ void generalPoll()
   delay(10);  // Found to be necessary on some machines to wait for data on the serial bus
   if (Serial1.available() > 0) {
     Serial1.readBytes(SASEvent, sizeof(SASEvent));
-    if (sasOnline=false) sasOnline=true;
+    if (sasOnline==false) sasOnline=true;
   }
 
   if (SASEvent[0] != 0x1F && SASEvent[0] != 0x00 && SASEvent[0] != 0x01 && SASEvent[0] != 0x80 && SASEvent[0] != 0x81 && SASEvent[0] != 0x7C) {
