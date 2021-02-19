@@ -7,6 +7,13 @@ By Marc Davis (2/16/2021)
   outside of casinos. This replaces the Bally MasterCom device. The project can now
   communicate directly with SAS-enabled machines for remote control, TITO and metering.
   
+  Build 20210219 Updates
+  
+  - Fixes a bug in 20210216 where the board would not set the sasOnline flag to true which
+    prevented the RFID reader from working
+  - Added a feature to enable periodic saving of player stats in case of loss of power to game
+  - You will still need to apply the config.txt changes from the prior build to use this release
+    
   Build 20210216 Updates
   * THERE ARE CHANGES TO THE CONFIG.TXT FILE IN THIS BUILD! PLEASE UPDATE YOUR CONFIG.TXT FILE
     AS PER THE DOCUMENTATION
