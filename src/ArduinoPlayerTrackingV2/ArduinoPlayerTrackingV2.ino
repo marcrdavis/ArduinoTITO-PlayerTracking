@@ -1,5 +1,5 @@
 /*
-  Arduino TITO and Player Tracking v2.0.20210219
+  Arduino TITO and Player Tracking v2.0.20210222
   by Marc R. Davis - Copyright (c) 2020-2021 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
@@ -126,6 +126,7 @@ String creditsToAdd = "1000";
 String changeCredits = "100";
 String gameName = "Slot Machine";
 String stringData = "";
+String versionString = "2.0.20210222";
 
 char ipAddress[15];
 char casinoName[30] = "THE CASINO";  // actual text should not exceed the display width
@@ -262,6 +263,12 @@ EthernetServer server(80);
 Keypad keypad = Keypad( makeKeymap(keys), pin_rows, pin_column, ROW_NUM, COLUMN_NUM );
 
 // ------------------------------------------------------------------------------------------------------------
+// Reset function
+// ------------------------------------------------------------------------------------------------------------
+
+void(* resetFunc) (void) = 0;
+
+// ------------------------------------------------------------------------------------------------------------
 // Setup - called once during init
 // ------------------------------------------------------------------------------------------------------------
 
@@ -275,6 +282,7 @@ void setup()
   changeCredits.reserve(8);
   ipStr.reserve(15);
   gameName.reserve(30);
+  versionString.reserve(15);
   stringData.reserve(296);
 
   // Setup RTC
@@ -295,7 +303,7 @@ void setup()
   Serial1.setTimeout(200);
   pinMode(LED, OUTPUT);
     
-  Serial.println(F("Arduino TITO and Player Tracking - Version 2.0.20210219 By Marc R. Davis"));
+  Serial.print(F("Arduino TITO and Player Tracking - By Marc R. Davis - Version ")); Serial.println(versionString);
   Serial.println(F("Initializing..."));
 
   // Setup Attract Scroll
@@ -1300,7 +1308,7 @@ bool setupPlayerMessage(bool skipBuffer)
   stringData.replace("[CARDHOLDER]", cardHolder);
   stringData.replace("[CASINONAME]", casinoName);  
   int creds = playerComps;
-  if (playerComps>1 and !skipBuffer) stringData += "You have " + String(creds) + " Comp Credits available! Press [ENT] to access Player Menu.                    ";
+  if (playerComps>1 and !skipBuffer) stringData += "You have Comp Credits available! Press [ENT] to access Player Menu.                    ";
   stringData.toCharArray(scrollBuffer, stringData.length() + 1); 
   resetScroll=true;
   return true;
@@ -1432,6 +1440,59 @@ void htmlPoll()
     bool reqResult = false;
 
     stringData = client.readStringUntil('\n'); // Get the first line of request
+    
+    // Check for specific POST for SD card updates
+    if (stringData.indexOf("POST") != -1 && stringData.indexOf("UPDATE") != -1) 
+    { 
+      String fn = "config.txt";
+      if (stringData.indexOf("UPDATEHTML") != -1) fn = "index.htm";
+            
+      // Find and discard headers
+      while (client.available() > 0)
+      {
+        stringData = client.readStringUntil('\n');
+        if (stringData == "\r") break; // end of headers - this might be an endless loop if response is malformed - look into this
+      }   
+
+      sdFile = SD.open(fn, O_WRITE | O_CREAT | O_TRUNC);
+
+      // if the file opened okay, write to it:
+      if (sdFile)
+      {
+        while (client.available() > 0)
+        {
+          stringData = client.readStringUntil('\n');
+          if (stringData == "\r") break; // end of headers - this might be an endless loop if response is malformed - look into this
+          sdFile.print(stringData);
+        }
+ 
+        // Close the file
+        sdFile.close();
+        Serial.print(fn);Serial.println(F(" updated. Restarting..."));  
+
+        // Return status/result to host     
+        client.print(textHeader); 
+        client.print(F("OK"));
+        client.stop();
+
+        showMessageOnVFD("REBOOTING", 0);
+        delay(2000);
+        resetFunc();
+      }
+      else
+      {
+        // Unable to write file
+        Serial.print(F("Unable to write file: "));Serial.println(fn);
+        
+        // Return status/result to host     
+        client.print(textHeader); 
+        client.print(F("ERROR"));
+        client.stop();
+        return;
+      }
+    }
+
+    // Check for known GET commands
     while (client.available()) client.read(); // Get the rest of the header and discard
 
     request = getValue(stringData, ' ', 1); // Get the request - we only care about GETs
@@ -1539,11 +1600,11 @@ void htmlPoll()
         if (clockSync == 1) client.print(gameName + "|" + now() + "||||||");
         else if (readGameData())
         {
-          client.print(gameName + "|" + now() +  "|" + String(Credits) + "|" + String(totalIn) + "|" + String(totalWon) + "|" + String(totalGames) + "|" + String(gamesWon) + "|" + String(gamesLost));
+          client.print(gameName + "|" + now() +  "|" + String(Credits) + "|" + String(totalIn) + "|" + String(totalWon) + "|" + String(totalGames) + "|" + String(gamesWon) + "|" + String(gamesLost) + "|" + versionString);
         }
         else
         {
-          client.print(gameName + "|" + now() + "||||||");
+          client.print(gameName + "|" + now() + "|||||||" + versionString);
         }        
 
         client.stop();
@@ -1558,6 +1619,19 @@ void htmlPoll()
         client.print(cardHolder + "|" + String(tournamentScore));
         client.stop();
         Serial.println(F("Sent tournament data to host"));
+        return;
+      }
+
+      if (command == "rb")
+      {
+        // Return status/result to host     
+        client.print(textHeader); 
+        client.print(F("OK"));
+        client.stop();
+        
+        showMessageOnVFD("REBOOTING", 0);
+        delay(2000);
+        resetFunc();
         return;
       }
 
