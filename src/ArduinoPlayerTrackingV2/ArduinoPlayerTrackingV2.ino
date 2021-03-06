@@ -1,5 +1,5 @@
 /*
-  Arduino TITO and Player Tracking v2.0.20210222
+  Arduino TITO and Player Tracking v2.0.20210306
   by Marc R. Davis - Copyright (c) 2020-2021 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
@@ -126,7 +126,7 @@ String creditsToAdd = "1000";
 String changeCredits = "100";
 String gameName = "Slot Machine";
 String stringData = "";
-String versionString = "2.0.20210222";
+String versionString = "2.0.20210306";
 
 char ipAddress[15];
 char casinoName[30] = "THE CASINO";  // actual text should not exceed the display width
@@ -1132,7 +1132,7 @@ void updatePlayerStats()
       playerTotalGames += (totalGames - tempTotalGames);
       playerGamesWon += (gamesWon - tempGamesWon);
       playerGamesLost += (gamesLost - tempGamesLost);
-      playerTotalWon =+ (totalWon - tempTotalWon);
+      playerTotalWon += (totalWon - tempTotalWon);
       playerComps += ((totalIn - tempTotalIn) * compPercentage);
   
       // Update temp values
