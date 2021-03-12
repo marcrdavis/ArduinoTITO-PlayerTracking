@@ -1,5 +1,5 @@
 /*
-  Arduino TITO and Player Tracking v2.0.20210306
+  Arduino TITO and Player Tracking v2.0.20210312
   by Marc R. Davis - Copyright (c) 2020-2021 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
@@ -126,7 +126,7 @@ String creditsToAdd = "1000";
 String changeCredits = "100";
 String gameName = "Slot Machine";
 String stringData = "";
-String versionString = "2.0.20210306";
+String versionString = "2.0.20210312";
 
 char ipAddress[15];
 char casinoName[30] = "THE CASINO";  // actual text should not exceed the display width
@@ -1462,7 +1462,6 @@ void htmlPoll()
         while (client.available() > 0)
         {
           stringData = client.readStringUntil('\n');
-          if (stringData == "\r") break; // end of headers - this might be an endless loop if response is malformed - look into this
           sdFile.print(stringData);
         }
  
@@ -1654,8 +1653,13 @@ void htmlPoll()
       if (command == "rh") reqResult=resetHandpay();
       if (command == "ec") reqResult=changeButtonToCredits(true);
       if (command == "dc") reqResult=changeButtonToCredits(false);
-      if (command == "pn" && cardID == 1) cardHolder=urlDecode(getValue(getValue(querystring, '&', 0), '=', 1));
-
+      
+      if (command == "pn" && cardType == 1)
+      {
+        cardHolder=urlDecode(getValue(getValue(querystring, '&', 1), '=', 1));
+        reqResult = true;
+      }
+      
       if (command == "ud") // Update Ticket Data
       {
         String location = urlDecode(getValue(getValue(querystring, '&', 1), '=', 1));
@@ -1744,7 +1748,7 @@ void htmlPoll()
         client.print("Current player: <b> " + cardHolder + "</b></div>");
 
         while (sdFile.available()) {
-          client.print(sdFile.readStringUntil('\n'));
+          client.print(sdFile.read());
         }
 
         sdFile.close();

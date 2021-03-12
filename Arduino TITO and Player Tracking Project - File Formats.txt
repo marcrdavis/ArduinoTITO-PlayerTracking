@@ -1,10 +1,7 @@
-Arduino TITO and Player Tracking Project (V2.0.20210306)
+Arduino TITO and Player Tracking Project (V2.0.20210312)
 Marc R. Davis
 
 PLAYER AND CONFIG FILE FORMATS
-
-*** IMPORTANT! THE FILE FORMAT HAS CHANGED FROM THE PREVIOUS VERSION - YOU WILL NEED TO MAKE CHANGES TO YOUR FILE BEFORE UPGRADING ***
-
 
 The config file is a standard .TXT file in a ‘property=value’ format. A default file is included in the download. Property names are CASE SENSITIVE. It has the following properties:
 
