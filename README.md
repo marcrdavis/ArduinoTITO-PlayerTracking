@@ -1,12 +1,19 @@
 # Arduino TITO and Player Tracking
 A homebrew slot machine TITO, player tracking and display project
-By Marc Davis (3/6/2021)
+By Marc Davis (3/12/2021)
 
   Project goals: To allow home slot machine owners the ability to use the player tracking
   display and card reader (with RFID modifications) which are normally non-functional
   outside of casinos. This replaces the Bally MasterCom device. The project can now
   communicate directly with SAS-enabled machines for remote control, TITO and metering.
 
+   Build 20210312 Updates
+  
+  - Fixes a bug where the Update Player Name function on the Web UI was not working properly
+  - Game Manager: This version removes the ability to remotely update the index.htm file due to 
+    a problem with the file being saved incorrectly by the Arduino - probably due to a buffer size
+    issue; Will revisit this later. The config.txt file can still be updated from Game Manager.
+   
    Build 20210306 Updates
   
   - Fixes a bug where the Player Total Winnings would not be calculated correctly
