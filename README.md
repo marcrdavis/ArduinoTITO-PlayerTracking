@@ -6,6 +6,10 @@ By Marc Davis (3/14/2021)
   Remote Control, Monitoring and Player Tracking (Display/Keypad/Reader) to their SAS-Compatible 
   games using an Arduino Mega 2560 and reusing existing player tracking hardware
 
+  NOTE: As of Build 20210314 there are now two versions of the sketch file in the package; one for RFID and one for
+  magnetic stripe readers. Determine which you want to use and modify the file as needed for your display and keypad options.
+  
+
    Build 20210314 Updates
   
   - Adds support for Magnetic Card Readers with a modified version of the MagStripe library to support insert-type readers
