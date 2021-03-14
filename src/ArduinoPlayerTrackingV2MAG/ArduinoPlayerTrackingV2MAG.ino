@@ -1,5 +1,5 @@
 /*
-  Arduino TITO and Player Tracking v2.0.20210314 RFID
+  Arduino TITO and Player Tracking v2.0.20210314 MAGSTRIPE
   by Marc R. Davis - Copyright (c) 2020-2021 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
@@ -7,11 +7,12 @@
   Additional testing and troubleshooting by NLG member Eddiiie - Thank you!
 
   Hardware requirements: 
-    Arduino Mega 2560 R3; RFID RC 522; W5100 Ethernet Shield; Serial Port Shield;
+    Arduino Mega 2560 R3; W5100 Ethernet Shield; Serial Port Shield;
     Compatible vacuum fluorescent display or LCD; if using a display other than the default LCD then
-    modifications will be required - see inline comments; Compatible keypad; if using a keypad other than
-    the default Bally 6x2/3x4 then modifications will be required - see inline comments; Modifications will 
-    be required if using another type of ethernet shield; Wifi shields are NOT recommended
+    modifications will be required - see inline comments; Compatible card reader; Compatible keypad; 
+    if using a keypad other than the default Bally 6x2/3x4 then modifications will be required - see 
+    inline comments; Modifications will be required if using another type of ethernet shield; 
+    Wifi shields are NOT recommended
 
   Software requirements:
     If using an IEE or Noritake VFD You will need my modified version of the libraries included in the zip file
@@ -60,7 +61,7 @@
 
 #include <IniFile.h>
 #include <SPI.h>
-#include <MFRC522.h>
+#include <MagStripe.h>
 #include <SD.h>
 #include <Ethernet.h>
 #include <EEPROM.h>
@@ -138,6 +139,9 @@ char adminMenu[150] = "1=Add Credits  2=Sound On  3=Sound Off  4=Unlock Game  5=
 char playerMenu[55] = "1=Show Comp Balance  2=Use Comp Credits  0=Exit Menu";
 char scrollBuffer[296];
 char fixedBuffer[21];
+
+static const byte DATA_BUFFER_LEN = 108;
+static char cardData[DATA_BUFFER_LEN];
 
 const char htmlHeader[] = "HTTP/1.1 200 OK\r\n"
                           "Content-Type: text/html\r\n"
@@ -253,11 +257,7 @@ byte pin_column[COLUMN_NUM] = {42, 43, 44, 45}; // Keypad Pins 5,6,7,8 */
 // Setup instances
 // ------------------------------------------------------------------------------------------------------------
 
-// Pins for RFID
-#define SS_PIN 53  
-#define RST_PIN 49 
-
-MFRC522 mfrc522(SS_PIN, RST_PIN);
+MagStripe card;
 File sdFile;
 EthernetServer server(80);
 Keypad keypad = Keypad( makeKeymap(keys), pin_rows, pin_column, ROW_NUM, COLUMN_NUM );
@@ -322,8 +322,8 @@ void setup()
     vfd.GU7000_reset();
     vfd.GU7000_init(); */ 
 
-    // Setup RFID
-    mfrc522.PCD_Init();    
+    // Setup Card Reader
+    card.begin(2);
   }
   else Serial.println(F("TITO Only Mode Enabled"));
   
@@ -386,7 +386,7 @@ void loop()
       generalPoll();
 
       // Check for player card events
-      if (sasOnline) if (checkForPlayerCard()) return;
+      if (!sasOnline) if (checkForPlayerCard()) return;
 
       // Keypad input
       char key = keypad.getKey();
@@ -982,21 +982,18 @@ void checkEthernet()
 
 bool checkForPlayerCard()
 {
-  if (mfrc522.PICC_IsNewCardPresent())
+  if (cardID == "" && card.available())
   {
-    if (mfrc522.PICC_ReadCardSerial())
+    // Card insertion begun
+    Serial.println(F("Reading card"));
+    short chars = card.read(cardData, DATA_BUFFER_LEN);
+    
+    if (chars > 0)
     {
       // Card present - identify
-      cardID = "";
-
-      for (byte i = 0; i < mfrc522.uid.size; i++)
-      {
-        cardID.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " "));
-        cardID.concat(String(mfrc522.uid.uidByte[i], HEX));
-      }
-
+      cardID = String(cardData);
+      if (cardID.length()>8) cardID = cardID.substring(cardID.length()-8,cardID.length());
       cardID.toUpperCase();
-      cardID = cardID.substring(1);
       cardID.replace(" ", "");
 
       if (cardID != lastCardID)
@@ -1072,45 +1069,43 @@ bool checkForPlayerCard()
     }
     else
     {
+      // Bad Card Swipe
+      Serial.println(F("Unable to read card"));
+      showMessageOnVFD("CARD READ ERROR", 0);
+      delay(2000);
+      showMessageOnVFD(casinoName, 0);
       return false;
     }
   }
   else
   {
-    bool current, previous;
-    if (lastCardID != "")
+    if (lastCardID != "" && !card.available2())
     {
-      previous = true;
-      current = !mfrc522.PICC_IsNewCardPresent();
+      // Card Removed
+      setupAttractMessage();
+      showMessageOnVFD("CARD REMOVED", 0);
+      Serial.println(F("Card Removed"));
 
-      if (current && previous)
-      {
-        // Card Removed
-        setupAttractMessage();
-        showMessageOnVFD("CARD REMOVED", 0);
-        Serial.println(F("Card Removed"));
-
-        if (cardType == 2) {
-          exitMenu();
-          clearStats();
-          return;         
-        }
-
-        updatePlayerStats();
-
-        if (inTournament)
-        {
-          Serial.println(F("Card removed while in Tournament Play. Player is no longer in game."));
-          showMessageOnVFD("WAIT FOR HOST", 0);
-          lockMachine();
-        }
-        
-        // Clear variables
+      if (cardType == 2) {
+        exitMenu();
         clearStats();
-
-        delay(2000);
-        return true;
+        return;         
       }
+
+      updatePlayerStats();
+
+      if (inTournament)
+      {
+        Serial.println(F("Card removed while in Tournament Play. Player is no longer in game."));
+        showMessageOnVFD("WAIT FOR HOST", 0);
+        lockMachine();
+      }
+      
+      // Clear variables
+      clearStats();
+
+      delay(2000);
+      return true;
     }
   }
 
