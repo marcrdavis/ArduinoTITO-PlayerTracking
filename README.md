@@ -8,7 +8,7 @@ By Marc Davis (3/14/2021)
 
    Build 20210314 Updates
   
-  - Adds support for Magnetic Card Readers with a modified version of the MagStripe library
+  - Adds support for Magnetic Card Readers with a modified version of the MagStripe library to support insert-type readers
   - Improved documentation
 
    Build 20210312 Updates
