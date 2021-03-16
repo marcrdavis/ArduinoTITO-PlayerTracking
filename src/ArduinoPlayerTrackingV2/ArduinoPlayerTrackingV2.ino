@@ -1,5 +1,5 @@
 /*
-  Arduino TITO and Player Tracking v2.0.20210314 RFID
+  Arduino TITO and Player Tracking v2.0.20210316 RFID
   by Marc R. Davis - Copyright (c) 2020-2021 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
@@ -126,7 +126,7 @@ String creditsToAdd = "1000";
 String changeCredits = "100";
 String gameName = "Slot Machine";
 String stringData = "";
-String versionString = "2.0.20210314";
+String versionString = "2.0.20210316";
 
 char ipAddress[15];
 char casinoName[30] = "THE CASINO";  // actual text should not exceed the display width
@@ -1747,7 +1747,7 @@ void htmlPoll()
         client.print("Current player: <b> " + cardHolder + "</b></div>");
 
         while (sdFile.available()) {
-          client.print(sdFile.read());
+          client.print(sdFile.readStringUntil('\n'));
         }
 
         sdFile.close();
