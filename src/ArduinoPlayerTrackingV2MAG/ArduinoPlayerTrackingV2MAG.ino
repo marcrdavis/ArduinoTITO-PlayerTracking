@@ -386,7 +386,7 @@ void loop()
       generalPoll();
 
       // Check for player card events
-      if (!sasOnline) if (checkForPlayerCard()) return;
+      if (sasOnline) if (checkForPlayerCard()) return;
 
       // Keypad input
       char key = keypad.getKey();
