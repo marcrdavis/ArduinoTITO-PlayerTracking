@@ -1,5 +1,5 @@
 /*
-  Arduino TITO and Player Tracking v2.0.20210316 RFID
+  Arduino TITO and Player Tracking v2.0.20210324 RFID
   by Marc R. Davis - Copyright (c) 2020-2021 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
@@ -126,7 +126,7 @@ String creditsToAdd = "1000";
 String changeCredits = "100";
 String gameName = "Slot Machine";
 String stringData = "";
-String versionString = "2.0.20210316";
+String versionString = "2.0.20210324";
 
 char ipAddress[15];
 char casinoName[30] = "THE CASINO";  // actual text should not exceed the display width
@@ -1307,7 +1307,7 @@ bool setupPlayerMessage(bool skipBuffer)
   stringData.replace("[CARDHOLDER]", cardHolder);
   stringData.replace("[CASINONAME]", casinoName);  
   int creds = playerComps;
-  if (playerComps>1 and !skipBuffer) stringData += "You have Comp Credits available! Press [ENT] to access Player Menu.                    ";
+  if (playerComps>1 && !skipBuffer) stringData += "You have Comp Credits available! Press [ENT] to access Player Menu.                    ";
   stringData.toCharArray(scrollBuffer, stringData.length() + 1); 
   resetScroll=true;
   return true;
@@ -1847,7 +1847,7 @@ int bcd2dec(byte bcd)
 
 // Data from game may be delayed due to other events or the state of the board
 
-byte waitForResponse(byte & waitfor, byte * ret, int sz)
+void waitForResponse(byte & waitfor, byte * ret, int sz)
 {
   byte responseBytes[sz - 2];
   int wait = 0;
@@ -1861,7 +1861,7 @@ byte waitForResponse(byte & waitfor, byte * ret, int sz)
     Serial.println(F("Unable to read data - timeout"));
     memset(ret, 0, sz);
     sasError = true;
-    return ret;
+    return;
   }
 
   Serial1.readBytes(responseBytes, sizeof(responseBytes));
@@ -1869,7 +1869,7 @@ byte waitForResponse(byte & waitfor, byte * ret, int sz)
   ret[1] = waitfor;
   memcpy(ret + 2, responseBytes, sizeof(responseBytes));
 
-  return ret;
+  return;
 }
 
 bool waitForACK(byte waitfor, char msg[])
