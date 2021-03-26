@@ -1,5 +1,5 @@
 /*
-  Arduino TITO and Player Tracking v2.0.20210324 MAGSTRIPE
+  Arduino TITO and Player Tracking v2.0.20210325 MAGSTRIPE
   by Marc R. Davis - Copyright (c) 2020-2021 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
@@ -127,7 +127,7 @@ String creditsToAdd = "1000";
 String changeCredits = "100";
 String gameName = "Slot Machine";
 String stringData = "";
-String versionString = "2.0.20210324";
+String versionString = "2.0.20210325";
 
 char ipAddress[15];
 char casinoName[30] = "THE CASINO";  // actual text should not exceed the display width
@@ -163,11 +163,11 @@ IPAddress serverIP(192, 168, 1, 254); // The board should not point to itself as
 // SAS Protocol Variables
 // ------------------------------------------------------------------------------------------------------------
 
-int SASAdr = 0x01;
-int CRCH = 0x00;
-int CRCL = 0x00;
 int LED = 13;
 
+byte SASAdr = 0x01;
+byte CRCH = 0x00;
+byte CRCL = 0x00;
 byte SASEvent [1];
 byte returnStatus[1];
 
@@ -339,7 +339,7 @@ void setup()
   // Clear the game serial buffer
   if (Serial1.available() > 3) while (Serial1.available() > 3) Serial1.read();
   
-  Serial.println(F("Initialization complete"));        
+  Serial.println(F("Initialization complete"));   
 }
 
 // ------------------------------------------------------------------------------------------------------------
@@ -1089,7 +1089,7 @@ bool checkForPlayerCard()
       if (cardType == 2) {
         exitMenu();
         clearStats();
-        return;         
+        return true;         
       }
 
       updatePlayerStats();
@@ -1250,7 +1250,7 @@ bool readGameData()
 
 // Show static message on VFD
 
-void showMessageOnVFD(char message[], int line)
+void showMessageOnVFD(const char message[], int line)
 {
   if (onlyTITO) return;
 
@@ -1867,7 +1867,7 @@ void waitForResponse(byte & waitfor, byte * ret, int sz)
   return;
 }
 
-bool waitForACK(byte waitfor, char msg[])
+bool waitForACK(byte waitfor, const char msg[])
 {
   int wait = 0;
 
