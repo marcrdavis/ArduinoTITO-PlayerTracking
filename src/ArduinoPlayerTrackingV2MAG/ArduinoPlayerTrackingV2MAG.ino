@@ -1,5 +1,5 @@
 /*
-  Arduino TITO and Player Tracking v2.0.20210325 MAGSTRIPE
+  Arduino TITO and Player Tracking v2.0.20210425 MAGSTRIPE
   by Marc R. Davis - Copyright (c) 2020-2021 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
@@ -127,7 +127,7 @@ String creditsToAdd = "1000";
 String changeCredits = "100";
 String gameName = "Slot Machine";
 String stringData = "";
-String versionString = "2.0.20210325";
+String versionString = "2.0.20210425";
 
 char ipAddress[15];
 char casinoName[30] = "THE CASINO";  // actual text should not exceed the display width
@@ -206,14 +206,16 @@ byte TIM [11];
 // Displays - Enable ONLY ONE Group
 // ------------------------------------------------------------------------------------------------------------
 
-// IEE VFDs
-//IeeFlipNoFrills vfd(22, 23, /*control pins */
-//                    31, 30, 29, 28, 27, 26, 25, 24 /*data pins */);
+// IEE VFDs; Pins 22, 23 = Control Pins; Pins 31-24 = data pins
+//IeeFlipNoFrills vfd(22, 23, 31, 30, 29, 28, 27, 26, 25, 24);
 
-// LCDs Pins 22 = RS, 23 = Enable, 24 = DB7, 25 = DB6, 26 = DB5, 27 = DB4
+// LCDs (4 bit mode); Pins 22 = RS, 23 = Enable, 24 = DB7, 25 = DB6, 26 = DB5, 27 = DB4
 LiquidCrystal vfd(22, 23, 27, 26, 25, 24);
 
-// Noritake GU-7000 Series VFD; PINS: 3 = SIN, 5 = BUSY, 7 = RESET; There is also code to enable in setup()
+// LCDs (8 bit mode); Pins 22 = RS, 23 = Enable, 24 = DB7, 25 = DB6, 26 = DB5, 27 = DB4, 28 = DB3, 29 = DB2, 30 = DB1, 31 = DB0
+//LiquidCrystal vfd(22, 23, 31, 30, 29, 28, 27, 26, 25, 24);
+
+// Noritake GU-7000 Series VFD; Pins 3 = SIN, 5 = BUSY, 7 = RESET; There is also code to enable in setup()
 // GU7000_Serial_Async interface(38400, 3, 5, 7); 
 // Noritake_VFD_GU7000 vfd;
 
@@ -1738,8 +1740,9 @@ void htmlPoll()
         client.print(F("<div style='max-width: 100%; margin: auto; text-align:center;'>"));
         client.print(F("<h2>Arduino TITO and Player Tracking</h2>"));
         client.print("Game Name: <b>" + gameName + "</b>&nbsp;&nbsp;&nbsp;");
-        client.print("IP Address: <b>" + ipStr + "</b><br>");
-        client.print("Current player: <b> " + cardHolder + "</b></div>");
+        client.print("Current player: <b> " + cardHolder + "</b><br>");
+        client.print("IP Address: <b>" + ipStr + "</b>&nbsp;&nbsp;&nbsp;");
+        client.print("Version: <b> " + versionString + "</b></div>");
 
         while (sdFile.available()) {
           client.print(sdFile.readStringUntil('\n'));
