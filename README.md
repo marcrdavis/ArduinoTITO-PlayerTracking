@@ -1,6 +1,6 @@
 # Arduino TITO and Player Tracking
 A homebrew slot machine TITO, player tracking and display project
-By Marc Davis (4/25/2021)
+By Marc Davis (5/24/2021)
 
   Project goals: To allow home slot machine owners the ability to add Ticket In/Ticket Out (TITO), 
   Remote Control, Monitoring and Player Tracking (Display/Keypad/Reader) to their SAS-Compatible 
@@ -8,6 +8,14 @@ By Marc Davis (4/25/2021)
 
   NOTE: As of Build 20210314 there are now two versions of the sketch file in the package; one for RFID and one for
   magnetic stripe readers. Determine which you want to use and modify the file as needed for your display and keypad options.
+  
+  EXPERIMENTAL BUILD 20210522C
+  Included in this package is an experimental version of the MAGSTRIPE sketch that includes support for the ArduCam OV2640_MINI_2MP_PLUS 
+  Camera Module for the purpose of implementing a 'Jackpot Winner' Photo. Admins can set a minimum jackpout amount at which a photo will
+  be taken of the player. The photo can be seen or downloaded using the Web UI. This is an experimental feature and is NOT RECOMMENDED 
+  for novice users as it requires modification of the cabinet or player tracking bracket to accommodate the camera. This feature is also 
+  only compatible with the MAGSTRIPE version due to limits in the SPI bus. Please see the Addendum PDF in the download for more information. 
+  I make no promises that this code will make it into the main branch.
   
    Build 20210425 Updates
   
