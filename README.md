@@ -10,6 +10,7 @@ By Marc Davis (5/24/2021)
   magnetic stripe readers. Determine which you want to use and modify the file as needed for your display and keypad options.
   
   EXPERIMENTAL BUILD 20210522C
+  
   Included in this package is an experimental version of the MAGSTRIPE sketch that includes support for the ArduCam OV2640_MINI_2MP_PLUS 
   Camera Module for the purpose of implementing a 'Jackpot Winner' Photo. Admins can set a minimum jackpout amount at which a photo will
   be taken of the player. The photo can be seen or downloaded using the Web UI. This is an experimental feature and is NOT RECOMMENDED 
