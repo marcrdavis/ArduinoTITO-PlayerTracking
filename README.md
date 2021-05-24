@@ -12,7 +12,7 @@ By Marc Davis (5/24/2021)
   EXPERIMENTAL BUILD 20210522C
   
   Included in this package is an experimental version of the MAGSTRIPE sketch that includes support for the ArduCam OV2640_MINI_2MP_PLUS 
-  Camera Module for the purpose of implementing a 'Jackpot Winner' Photo. Admins can set a minimum jackpout amount at which a photo will
+  Camera Module for the purpose of implementing a 'Jackpot Winner' Photo. Admins can set a minimum jackpot amount at which a photo will
   be taken of the player. The photo can be seen or downloaded using the Web UI. This is an experimental feature and is NOT RECOMMENDED 
   for novice users as it requires modification of the cabinet or player tracking bracket to accommodate the camera. This feature is also 
   only compatible with the MAGSTRIPE version due to limits in the SPI bus. Please see the Addendum PDF in the download for more information. 
