@@ -1,5 +1,5 @@
 /*
-  Arduino TITO and Player Tracking v2.0.20210425 MAGSTRIPE
+  Arduino TITO and Player Tracking v2.0.20210814 MAGSTRIPE
   by Marc R. Davis - Copyright (c) 2020-2021 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
@@ -127,7 +127,7 @@ String creditsToAdd = "1000";
 String changeCredits = "100";
 String gameName = "Slot Machine";
 String stringData = "";
-String versionString = "2.0.20210425";
+String versionString = "2.0.20210814";
 
 char ipAddress[15];
 char casinoName[30] = "THE CASINO";  // actual text should not exceed the display width
@@ -433,6 +433,15 @@ void loop()
         enterPlayerMenu();
         return;
       }      
+
+      // Display IP and Version Info
+      if (key == '0' && !inAdminMenu && !inPlayerMenu) {
+          showMessageOnVFD(("VER " + versionString).c_str(), 0);
+          showMessageOnVFD(ipStr.c_str(), 1);
+          delay(3000);
+          exitMenu();
+          return;
+      }
 
       // Tournament timing
       if (inTournament && waitingForStart) {
@@ -1762,7 +1771,9 @@ void htmlPoll()
         client.print(F("<div style='max-width: 100%; margin: auto; text-align:center;'>"));
         client.print(F("<h2>Arduino TITO and Player Tracking</h2>"));
         client.print("Game Name: <b>" + gameName + "</b>&nbsp;&nbsp;&nbsp;");
-        client.print("IP Address: <b>" + ipStr + "</b><br><hr>");
+        client.print("Current player: <b> " + cardHolder + "</b><br>");
+        client.print("IP Address: <b>" + ipStr + "</b>&nbsp;&nbsp;&nbsp;");
+        client.print("Version: <b> " + versionString + "</b><br><hr>");
         client.print(F("Unable to load User Interface!<br>This device can still be controlled remotely with the Game Manager Windows app or the BETTORSlots Android/IOS apps.<br>"));
         client.print(F("</div></body>"));
         client.print(htmlFooter);
