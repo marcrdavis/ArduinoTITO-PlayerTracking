@@ -1,6 +1,6 @@
 # Arduino TITO and Player Tracking
 A homebrew slot machine TITO, player tracking and display project
-By Marc Davis (5/24/2021)
+By Marc Davis (8/14/2021)
 
   Project goals: To allow home slot machine owners the ability to add Ticket In/Ticket Out (TITO), 
   Remote Control, Monitoring and Player Tracking (Display/Keypad/Reader) to their SAS-Compatible 
@@ -8,6 +8,12 @@ By Marc Davis (5/24/2021)
 
   NOTE: As of Build 20210314 there are now two versions of the sketch file in the package; one for RFID and one for
   magnetic stripe readers. Determine which you want to use and modify the file as needed for your display and keypad options.
+  
+  Build 20210814 Updates
+  
+  - WebUI updated to include Reboot Arduino option; replaces Jackpot Reset button on UI
+  - Adds IP Address and Version information by pressing 0 on the keypad when in Attract mode
+  - Minor code changes
   
   EXPERIMENTAL BUILD 20210522C
   
