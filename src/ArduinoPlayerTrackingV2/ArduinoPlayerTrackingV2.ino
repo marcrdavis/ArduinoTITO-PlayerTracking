@@ -1,5 +1,5 @@
 /*
-  Arduino TITO and Player Tracking v2.0.20210814 RFID
+  Arduino TITO and Player Tracking v2.0.20210818 RFID
   by Marc R. Davis - Copyright (c) 2020-2021 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
@@ -126,7 +126,7 @@ String creditsToAdd = "1000";
 String changeCredits = "100";
 String gameName = "Slot Machine";
 String stringData = "";
-String versionString = "2.0.20210814";
+String versionString = "2.0.20210818";
 
 char ipAddress[15];
 char casinoName[30] = "THE CASINO";  // actual text should not exceed the display width
@@ -521,12 +521,19 @@ void useCompCredits()
     delay(2000);
   }
   else {
-    addCredits(String(creds));
-    playerComps=playerComps-creds;    
-
-    // Call this now to write back the changed playerComps; the other values will be updated when the card is removed
-    if (localStorage) writePlayerDataToSD(lastCardID, cardType, cardHolder, playerTotalGames, playerGamesWon, playerGamesLost, playerTotalWon, playerComps);
-    else writePlayerDataToServer(lastCardID, cardType, cardHolder, playerTotalGames, playerGamesWon, playerGamesLost, playerTotalWon, playerComps);
+   if (addCredits(String(creds)))
+   {
+      playerComps=playerComps-creds;    
+  
+      // Call this now to write back the changed playerComps; the other values will be updated when the card is removed
+      if (localStorage) writePlayerDataToSD(lastCardID, cardType, cardHolder, playerTotalGames, playerGamesWon, playerGamesLost, playerTotalWon, playerComps);
+      else writePlayerDataToServer(lastCardID, cardType, cardHolder, playerTotalGames, playerGamesWon, playerGamesLost, playerTotalWon, playerComps);
+   }
+   else
+   {
+      showMessageOnVFD("ERROR - RETRY",0);
+      delay(2000);
+   }
   }
   showMessageOnVFD("PLAYER MENU",0);
 }
@@ -1471,8 +1478,8 @@ void htmlPoll()
       {
         while (client.available() > 0)
         {
-          stringData = client.readStringUntil('\n');
-          sdFile.print(stringData);
+          char c = client.read();
+          sdFile.print(c);
         }
  
         // Close the file
@@ -1664,10 +1671,44 @@ void htmlPoll()
       if (command == "ec") reqResult=changeButtonToCredits(true);
       if (command == "dc") reqResult=changeButtonToCredits(false);
       
-      if (command == "pn" && cardType == 1)
+      if (command == "pn") // Rename player card
       {
-        cardHolder=urlDecode(getValue(getValue(querystring, '&', 1), '=', 1));
+        if (cardType == 1)
+        {
+          cardHolder=urlDecode(getValue(getValue(querystring, '&', 1), '=', 1));
+          reqResult = true;
+          showMessageOnVFD("Card Renamed", 0);
+          delay(2000);
+        }
+        else
+        {
+          reqResult = false;
+          showMessageOnVFD("No Card", 0);
+          delay(2000);
+        }
+      }
+
+      if (command == "pc")  // Set comps to card
+      {        
+        if (cardType == 1)
+        {
+        float comps = getValue(getValue(querystring, '&', 1), '=', 1).toInt();
+        playerComps = comps;
         reqResult = true;
+
+        // Call this now to write back the changed playerComps; the other values will be updated when the card is removed
+        if (localStorage) writePlayerDataToSD(lastCardID, cardType, cardHolder, playerTotalGames, playerGamesWon, playerGamesLost, playerTotalWon, playerComps);
+        else writePlayerDataToServer(lastCardID, cardType, cardHolder, playerTotalGames, playerGamesWon, playerGamesLost, playerTotalWon, playerComps);
+    
+        showMessageOnVFD("Comps Applied", 0);
+        delay(2000);
+        }
+        else
+        {
+          reqResult = false;
+          showMessageOnVFD("No Card", 0);
+          delay(2000);
+        }
       }
       
       if (command == "ud") // Update Ticket Data
