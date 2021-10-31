@@ -1,0 +1,4 @@
+changeToCredits=0
+changeCredits=200
+ipAddress=192.168.1.254
+

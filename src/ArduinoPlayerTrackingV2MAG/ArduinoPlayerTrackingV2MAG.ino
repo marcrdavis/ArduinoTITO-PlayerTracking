@@ -1,5 +1,5 @@
 /*
-  Arduino TITO and Player Tracking v2.0.20210818 MAGSTRIPE
+  Arduino TITO and Player Tracking v2.0.20211031 MAGSTRIPE
   by Marc R. Davis - Copyright (c) 2020-2021 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
@@ -127,7 +127,7 @@ String creditsToAdd = "1000";
 String changeCredits = "100";
 String gameName = "Slot Machine";
 String stringData = "";
-String versionString = "2.0.20210818";
+String versionString = "2.0.20211031";
 
 char ipAddress[15];
 char casinoName[30] = "THE CASINO";  // actual text should not exceed the display width
@@ -1708,9 +1708,9 @@ void htmlPoll()
       
       if (command == "ud") // Update Ticket Data
       {
-        String location = urlDecode(getValue(getValue(querystring, '&', 1), '=', 1));
-        String address1 = urlDecode(getValue(getValue(querystring, '&', 2), '=', 1));
-        String address2 = urlDecode(getValue(getValue(querystring, '&', 3), '=', 1));
+        String location = urlDecode(getValue(getValue(querystring, '&', 0), '=', 1));
+        String address1 = urlDecode(getValue(getValue(querystring, '&', 1), '=', 1));
+        String address2 = urlDecode(getValue(getValue(querystring, '&', 2), '=', 1));
 
         reqResult=SetTicketData(location, address1, address2);
         showMessageOnVFD("Ticket Updated", 0);
@@ -1769,7 +1769,7 @@ void htmlPoll()
         Serial.print(F("Scrolling message updated: ")); Serial.println(customMsg);
       }
 
-      // Return status/result to host     
+      // Return status/result to client     
       client.print(textHeader); 
       if (reqResult) client.print(F("OK"));
       else client.print(F("ERROR"));
