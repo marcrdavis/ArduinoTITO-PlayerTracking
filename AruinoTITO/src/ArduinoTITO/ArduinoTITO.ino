@@ -30,7 +30,6 @@
 
 bool changeToCredits = 0; // Set to 1 to enable Change to Credits
 bool sasError = false;
-bool isLocked = false;
 
 String changeCredits = "100"; // Set the number of credits to add on each push of the change/service button
 
@@ -47,21 +46,10 @@ byte returnStatus[1];
 byte SVNS[2] = {SASAdr, 0x57};
 byte TP[2] = {SASAdr, 0x70};
 byte HPI[2] = {SASAdr, 0x1B};
-byte LOCK[4] = {SASAdr, 0x01, 0x00, 0x00};
-byte ULOCK[4] = {SASAdr, 0x02, 0x00, 0x00};
-byte MUTE[4] = {SASAdr, 0x03, 0x00, 0x00};
-byte UMUTE[4] = {SASAdr, 0x04, 0x00, 0x00};
 byte EVInfo[5] = {SASAdr, 0x4D, 0x00, 0x00, 0x00};
 byte transComplete[6] = {SASAdr, 0x71, 0x01, 0xFF, 0x1F, 0xD0};
-byte mCredits[2] = {SASAdr, 0x1A};
-byte mCoinIn[2] = {SASAdr, 0x11};
-byte mTotWon[2] = {SASAdr, 0x12};
-byte mTotGames[2] = {SASAdr, 0x15};
-byte mgamesWon[2] = {SASAdr, 0x16};
-byte mgamesLost[2] = {SASAdr, 0x17};
 
 byte LBS [9];
-byte PCR [10];
 byte SVN [13];
 byte TPS [35];
 byte HPS [24];
@@ -69,8 +57,6 @@ byte TEQ [21];
 byte TRS [21];
 byte COT [10];
 byte COS [5];
-byte TDR [5];
-byte TIM [11];
 
 // ------------------------------------------------------------------------------------------------------------
 // Setup - called once during init
@@ -133,8 +119,7 @@ bool addCredits(String credits)
 
 // ------------------------------------------------------------------------------------------------------------
 // SAS Protocol
-// NOTE: This does not implement the full protocol - just enough for TITO, Meters, some controls and
-//       System Bonusing
+// NOTE: This does not implement the full protocol - just enough for TITO and System Bonusing
 // ------------------------------------------------------------------------------------------------------------
 
 // The General poll must be running in order to send data to game and receive responses
@@ -217,47 +202,6 @@ bool waitForACK(byte waitfor)
   return true;
 }
 
-long pollMeters(byte * meter)
-{
-  byte meterData[8];
-
-  SendTypeR(meter, sizeof(meter));
-  waitForResponse(meter[1], meterData, sizeof(meterData));
-
-  String sMeter;
-  for (int i = 2; i < 6; i++) {
-    sMeter.concat(String(bcd2dec(meterData[i]) < 10 ? "0" : ""));
-    sMeter.concat(String(bcd2dec(meterData[i])));
-  }
-  return sMeter.toInt();
-}
-
-bool lockMachine()
-{
-  SendTypeS(LOCK, sizeof(LOCK));
-  isLocked=true;
-  return waitForACK(SASAdr);
-}
-
-bool unlockMachine()
-{
-  SendTypeS(ULOCK, sizeof(LOCK));
-  isLocked=false;
-  return waitForACK(SASAdr);
-}
-
-bool mute()
-{
-  SendTypeS(MUTE, sizeof(MUTE));
-  return waitForACK(SASAdr);
-}
-
-bool unMute()
-{
-  SendTypeS(UMUTE, sizeof(UMUTE));
-  return waitForACK(SASAdr);
-}
-
 void getHandpayInfo()
 {
   SendTypeR(HPI, sizeof(HPI));
@@ -305,59 +249,10 @@ void SystemValidation()
   }
 }
 
-bool SetTicketData(String loc, String addr1, String addr2)
-{
-  byte bLoc[loc.length() + 1];
-  byte bAddr1[addr1.length() + 1];
-  byte bAddr2[addr2.length() + 1];
-  byte ticketData[11 + loc.length() + addr1.length() + addr2.length()];
-  byte bSize = 6 + loc.length() + addr1.length() + addr2.length();
-
-  loc.getBytes(bLoc, loc.length() + 1);
-  addr1.getBytes(bAddr1, addr1.length() + 1);
-  addr2.getBytes(bAddr2, addr2.length() + 1);
-
-  ticketData[0] = SASAdr;
-  ticketData[1] = 0x7D;
-  ticketData[2] = bSize;
-  ticketData[3] = 0x00;
-  ticketData[4] = 0x00;
-  ticketData[5] = 0x00;
-  ticketData[6] = loc.length();
-
-  memcpy(ticketData + 7, bLoc, loc.length());
-  ticketData[7 + loc.length()] = addr1.length();
-  memcpy(ticketData + 8 + loc.length(), bAddr1, addr1.length());
-  ticketData[8 + loc.length() + addr1.length()] = addr2.length();
-  memcpy(ticketData + 9 + loc.length() + addr1.length(), bAddr2, addr2.length());
-
-  SendTypeS(ticketData, sizeof(ticketData));
-  waitForResponse(ticketData[1], TDR, sizeof(TDR));
-  return true;
-}
-
 void CashOutState()
 {
   SendTypeS(EVInfo, sizeof(EVInfo));
   waitForResponse(EVInfo[1], TPS, sizeof(TPS));
-}
-
-bool SetDateTime(String datetime)
-{
-  datetime.trim();
-  
-  TIM [0] = SASAdr;
-  TIM [1] = 0x7F;
-  TIM [2] = dec2bcd(datetime.substring(0, 2).toInt());
-  TIM [3] = dec2bcd(datetime.substring(2, 4).toInt());
-  TIM [4] = dec2bcd(datetime.substring(4, 6).toInt());
-  TIM [5] = dec2bcd(datetime.substring(6, 8).toInt());
-  TIM [6] = dec2bcd(datetime.substring(8, 10).toInt());
-  TIM [7] = dec2bcd(datetime.substring(10, 12).toInt());
-  TIM [8] = dec2bcd(datetime.substring(12, 14).toInt());
-
-  SendTypeS(TIM, sizeof(TIM));
-  return waitForACK(SASAdr);
 }
 
 bool LegacyBonus (byte SASAdr, byte Amount1, byte Amount2, byte Amount3, byte Amount4, byte Type)
