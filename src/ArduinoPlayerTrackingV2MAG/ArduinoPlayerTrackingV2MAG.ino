@@ -1,5 +1,5 @@
 /*
-  Arduino TITO and Player Tracking v2.0.20211031 MAGSTRIPE
+  Arduino TITO and Player Tracking v2.0.20211112 MAGSTRIPE
   by Marc R. Davis - Copyright (c) 2020-2021 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
@@ -957,7 +957,7 @@ void initEthernet()
 
 void checkEthernet()
 {
-  if (useDHCP) return;
+  if (!useDHCP) return;
 
   switch (Ethernet.maintain()) {
     case 1:
