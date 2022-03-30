@@ -1,4 +1,4 @@
 [CardData]
-carHholder=Admin
+cardHolder=Admin
 cardType=2
 
