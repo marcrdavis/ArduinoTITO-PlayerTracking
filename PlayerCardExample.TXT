@@ -1,5 +1,5 @@
 [CardData]
-carHholder=John Smith
+cardHolder=John Smith
 cardType=1
 playerTotalGames=0
 playerGamesWon=0
