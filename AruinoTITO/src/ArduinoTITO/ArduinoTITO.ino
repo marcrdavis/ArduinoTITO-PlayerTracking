@@ -1,5 +1,5 @@
 /*
-  Arduino TITO v2.0.20211031T
+  Arduino TITO v2.0.20220607T
   by Marc R. Davis - Copyright (c) 2020-2021 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
@@ -28,10 +28,10 @@
 // Core Variables
 // ------------------------------------------------------------------------------------------------------------
 
-bool changeToCredits = 0; // Set to 1 to enable Change to Credits
+bool changeToCredits = 0; // UPDATE BEFORE COMPILING - Set to 1 to enable Change to Credits
 bool sasError = false;
 
-String changeCredits = "100"; // Set the number of credits to add on each push of the change/service button
+String changeCredits = "500"; // UPDATE BEFORE COMPILING - Set the number of credits to add on each push of the change/service button
 
 // ------------------------------------------------------------------------------------------------------------
 // SAS Protocol Variables
@@ -142,7 +142,6 @@ void generalPoll()
     // Process/log these events
     if (SASEvent[0] == 0x71 & changeToCredits) addCredits(changeCredits); // To enable 'Change button' credits
     if (SASEvent[0] == 0x72 & changeToCredits) addCredits(changeCredits); // To enable 'Change button' credits
-    if (SASEvent[0] == 0x51) getHandpayInfo();
     if (SASEvent[0] == 0x57) SystemValidation();
     if (SASEvent[0] == 0x3D) CashOutState();
     if (SASEvent[0] == 0x67) RedeemTicket();
@@ -164,6 +163,7 @@ int bcd2dec(byte bcd)
 
 void waitForResponse(byte & waitfor, byte * ret, int sz)
 {
+  sasError = false;
   byte responseBytes[sz - 2];
   int wait = 0;
 
@@ -202,19 +202,12 @@ bool waitForACK(byte waitfor)
   return true;
 }
 
-void getHandpayInfo()
-{
-  SendTypeR(HPI, sizeof(HPI));
-  waitForResponse(HPI[1], HPS, sizeof(HPS));  
-}
-
 void SystemValidation()
 {
   // Retry up to 2 times
 
   for (int x = 0; x < 2; x++) {
     SendTypeR(SVNS, sizeof(SVNS));
-    sasError = false;
     waitForResponse(SVNS[1], COT, sizeof(COT));
     if (!sasError) break;
   }
@@ -275,7 +268,6 @@ void RedeemTicket()
   
   for (int x = 0; x < 2; x++) {
     SendTypeR(TP, sizeof(TP));
-    sasError = false;
     waitForResponse(TP[1], TEQ, sizeof(TEQ));
     if (!sasError) break;
   }
@@ -303,7 +295,6 @@ void RedeemTicket()
     TRS [18] = TEQ [18];                         // Validation BCD9
   
     SendTypeS(TRS, sizeof(TRS));  
-    sasError = false;
     waitForResponse(TRS[1], TEQ, sizeof(TEQ));
   }
 }

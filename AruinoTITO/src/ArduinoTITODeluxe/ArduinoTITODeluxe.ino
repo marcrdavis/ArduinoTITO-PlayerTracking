@@ -1,5 +1,5 @@
 /*
-  Arduino TITO Deluxe v2.0.20211031D
+  Arduino TITO Deluxe v2.0.20220607D
   by Marc R. Davis - Copyright (c) 2020-2021 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
@@ -40,23 +40,16 @@
 // Core Variables
 // ------------------------------------------------------------------------------------------------------------
 
-long Credits = 0;
-long totalIn = 0;
-long totalWon = 0;
-long totalGames = 0;
-long gamesWon = 0;
-long gamesLost = 0;
-
-bool changeToCredits = 0;
+bool changeToCredits = 0; // UPDATE BEFORE COMPILING - Set to 1 to enable Change to Credits
 bool sasError = false;
 bool isLocked = false;
 
-String changeCredits = "100";
+String changeCredits = "500";  // UPDATE BEFORE COMPILING - Set the number of credits to add on each push of the change/service button
 String stringData = "";
 String url = "";
 
-byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }; // Change to unique address for each board
-IPAddress ip(192, 168, 1, 254);  // Default address - set according to your network
+byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }; // UPDATE BEFORE COMPILING - Change to unique address for each board 
+IPAddress ip(192, 168, 1, 254);  // UPDATE BEFORE COMPILING - Device IP Address
 
 // ------------------------------------------------------------------------------------------------------------
 // SAS Protocol Variables
@@ -121,10 +114,7 @@ void setup()
 
   // Setup SD Card
   initSDCard();
-
-  // Read Config
-  readConfig();
-  
+ 
   // Initialize Ethernet
   initEthernet();
 
@@ -158,30 +148,6 @@ void loop()
 // IO Functions
 // ------------------------------------------------------------------------------------------------------------
 
-// Read the configuration from SD card
-
-void readConfig()
-{
-  sdFile = SD.open("config.txt");
-  
-  if (!sdFile)
-  {
-    Serial.println(F("Failed to read config.txt"));
-    return;
-  }
-
-  while (sdFile.available()) 
-  {
-    stringData = sdFile.readStringUntil('\r');
-    if (getValue(stringData, '=', 0) == "changeCredits") changeCredits = getValue(stringData, '=', 1);
-    if (getValue(stringData, '=', 0) == "changeToCredits") changeToCredits = getValue(stringData, '=', 1).toInt();
-    if (getValue(stringData, '=', 0) == "ipAddress")  ip.fromString(getValue(stringData, '=', 1));
-    stringData = sdFile.readStringUntil('\n');
-  }
-  
-  sdFile.close();
-}
-
 // Initialize the SD card
 
 void initSDCard()
@@ -202,6 +168,8 @@ void initSDCard()
 void initEthernet()
 {
   // Start the Ethernet connection and the server
+  // Need version 1.0.4 of Ethernet Library due to memory constraints
+  
   Ethernet.begin(mac, ip);
   ip = Ethernet.localIP();
   delay(1000);
@@ -230,27 +198,6 @@ bool addCredits(String credits)
     return true;
   }
   else return false;
-}
-
-// Read the game meters
-
-bool readGameData()
-{
-  sasError = false;
-
-  Credits = pollMeters(mCredits);
-  delay(100);
-  totalIn = pollMeters(mCoinIn);
-  delay(100);
-  totalWon = pollMeters(mTotWon);
-  delay(100);
-  totalGames = pollMeters(mTotGames);
-  delay(100);
-  gamesWon = pollMeters(mgamesWon);
-  delay(100);
-  gamesLost = pollMeters(mgamesLost);
-
-  return !sasError;
 }
 
 // ------------------------------------------------------------------------------------------------------------
@@ -354,28 +301,20 @@ void htmlPoll()
       if (command == "ds") // Game Statistics
       {
         client.print(F("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n<html>\r\n"));
-        if (readGameData())
-        {
-          client.print(F("<head></head><body><h2>GAME STATISTICS</h2><br>"));
-          client.print(F("Credits<br>"));
-          client.print(Credits);
-          client.print(F("<br>Total In<br>"));
-          client.print(totalIn);
-          client.print(F("<br>Total Won<br>"));
-          client.print(totalWon);
-          client.print(F("<br>Total Games<br>"));
-          client.print(totalGames);
-          client.print(F("<br>Games Won<br>"));
-          client.print(gamesWon);
-          client.print(F("<br>Games Lost<br>"));
-          client.print(gamesLost);
-          client.print(F("<br>"));        
-        }
-        else
-        {
-          client.print(F("<head><body><h2>GAME STATISTICS NOT AVAILABLE</h2><br>"));
-        }
-
+        client.print(F("<head></head><body><h2>GAME STATISTICS</h2><br>"));
+        client.print(F("Credits<br>"));
+        client.print(pollMeters(mCredits));
+        client.print(F("<br>Total In<br>"));
+        client.print(pollMeters(mCoinIn));
+        client.print(F("<br>Total Won<br>"));
+        client.print(pollMeters(mTotWon));
+        client.print(F("<br>Total Games<br>"));
+        client.print(pollMeters(mTotGames));
+        client.print(F("<br>Games Won<br>"));
+        client.print(pollMeters(mgamesWon));
+        client.print(F("<br>Games Lost<br>"));
+        client.print(pollMeters(mgamesLost));
+        client.print(F("<br>"));      
         client.print(F("</body>"));
         client.print(F("</html>\r\n\r\n"));
         client.stop();
@@ -467,7 +406,6 @@ void generalPoll()
     // Process/log these events
     if (SASEvent[0] == 0x71 & changeToCredits) addCredits(changeCredits); // To enable 'Change button' credits
     if (SASEvent[0] == 0x72 & changeToCredits) addCredits(changeCredits); // To enable 'Change button' credits
-    if (SASEvent[0] == 0x51) getHandpayInfo();
     if (SASEvent[0] == 0x57) SystemValidation();
     if (SASEvent[0] == 0x3D) CashOutState();
     if (SASEvent[0] == 0x67) RedeemTicket();
@@ -489,6 +427,7 @@ int bcd2dec(byte bcd)
 
 void waitForResponse(byte & waitfor, byte * ret, int sz)
 {
+  sasError = false;
   byte responseBytes[sz - 2];
   int wait = 0;
 
@@ -568,19 +507,12 @@ bool unMute()
   return waitForACK(SASAdr);
 }
 
-void getHandpayInfo()
-{
-  SendTypeR(HPI, sizeof(HPI));
-  waitForResponse(HPI[1], HPS, sizeof(HPS));  
-}
-
 void SystemValidation()
 {
   // Retry up to 2 times
 
   for (int x = 0; x < 2; x++) {
     SendTypeR(SVNS, sizeof(SVNS));
-    sasError = false;
     waitForResponse(SVNS[1], COT, sizeof(COT));
     if (!sasError) break;
   }
@@ -690,7 +622,6 @@ void RedeemTicket()
   
   for (int x = 0; x < 2; x++) {
     SendTypeR(TP, sizeof(TP));
-    sasError = false;
     waitForResponse(TP[1], TEQ, sizeof(TEQ));
     if (!sasError) break;
   }
@@ -718,7 +649,6 @@ void RedeemTicket()
     TRS [18] = TEQ [18];                         // Validation BCD9
   
     SendTypeS(TRS, sizeof(TRS));  
-    sasError = false;
     waitForResponse(TRS[1], TEQ, sizeof(TEQ));
   }
 }
