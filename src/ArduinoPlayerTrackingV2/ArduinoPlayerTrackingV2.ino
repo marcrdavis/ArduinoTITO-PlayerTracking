@@ -1,6 +1,6 @@
 /*
-  Arduino TITO and Player Tracking v2.0.20211112 RFID
-  by Marc R. Davis - Copyright (c) 2020-2021 All Rights Reserved
+  Arduino TITO and Player Tracking v2.0.20220607 RFID
+  by Marc R. Davis - Copyright (c) 2020-2022 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
   Portions of the Arduino SAS protocol implementation by Ian Walker - Thank you!
@@ -96,6 +96,7 @@ long playerGamesLost = 0;
 long playerTotalWon = 0;
 long tournamentScore = 0;
 long winMeterStart = 0;
+long creditFloor = 0;
 float playerComps = 0;
 float compPercentage = 0.01; // Set to zero to disable comps
 unsigned long startTime = 0;
@@ -108,6 +109,7 @@ bool localStorage = 1;
 bool onlyTITO = 0;
 bool changeToCredits = 0;
 bool useDHCP = 1;
+bool autoAddCredits = 0;
 bool sasOnline = false;
 bool sasError = false;
 bool inAdminMenu = false;
@@ -126,7 +128,7 @@ String creditsToAdd = "1000";
 String changeCredits = "100";
 String gameName = "Slot Machine";
 String stringData = "";
-String versionString = "2.0.20211031";
+String versionString = "2.0.20220607";
 
 char ipAddress[15];
 char casinoName[30] = "THE CASINO";  // actual text should not exceed the display width
@@ -358,6 +360,17 @@ void loop()
   {
    lastUpdate = millis();  //reset 
    updatePlayerStats();
+  }
+
+  // If autoAddCredits is enabled then check the credit meter and add credits if necessary
+  if (autoAddCredits)
+  {
+    Credits = pollMeters(mCredits);
+    if (Credits != 0 && Credits < creditFloor) 
+    {
+      Serial.println(F("Low credit threshold reached!"));
+      addCredits(changeCredits);      
+    }
   }
   
   resetScroll=false;
@@ -702,7 +715,23 @@ void readConfig()
   if (ini.getValue(NULL, "changeCredits", buffer, 256)) changeCredits = String(buffer);
   if (ini.getValue(NULL, "gameName", buffer, 256)) gameName = String(buffer);
   if (ini.getValue(NULL, "compPercentage", buffer, 256)) compPercentage = atof(buffer);
+  if (ini.getValue(NULL, "autoAddCredits", buffer, 256)) autoAddCredits = String(buffer);
+  if (ini.getValue(NULL, "creditFloor", buffer, 256)) creditFloor = atol(buffer);
 
+  if (creditFloor == 0 && autoAddCredits == 1)
+  {
+    // creditFloor cannot be zero or ticket cashout will not work properly
+    autoAddCredits = 0;
+    Serial.println(F("Unable to enable autoAddCredits because creditFloor is set to 0"));
+  }
+
+    if (changeCredits == 0 && autoAddCredits == 1)
+  {
+    // changeCredits cannot be zero or ticket cashout will not work properly
+    autoAddCredits = 0;
+    Serial.println(F("Unable to enable autoAddCredits because changeCredits is set to 0"));
+  }
+  
   if (ini.getValue(NULL, "ipAddress", buffer, 256))
   {
     strcpy(ipAddress, buffer);
@@ -1250,7 +1279,6 @@ bool addCredits(String credits)
 bool readGameData()
 {
   Serial.println(F("Reading meters from game"));
-  sasError = false;
 
   Credits = pollMeters(mCredits);
   delay(100);
@@ -1906,7 +1934,8 @@ void waitForResponse(byte & waitfor, byte * ret, int sz)
 {
   byte responseBytes[sz - 2];
   int wait = 0;
-
+  sasError = false;
+  
   while (Serial1.read() != waitfor && wait < 3000) {
     delay(1);
     wait += 1;
@@ -2040,7 +2069,6 @@ void SystemValidation()
 
   for (int x = 0; x < 2; x++) {
     SendTypeR(SVNS, sizeof(SVNS));
-    sasError = false;
     waitForResponse(SVNS[1], COT, sizeof(COT));
     if (!sasError) break;
   }
@@ -2158,7 +2186,6 @@ void RedeemTicket()
   for (int x = 0; x < 2; x++) {
     SendTypeR(TP, sizeof(TP));
     Serial.println(F("Waiting for ticket data"));
-    sasError = false;
     waitForResponse(TP[1], TEQ, sizeof(TEQ));
     if (!sasError) break;
   }
@@ -2189,7 +2216,6 @@ void RedeemTicket()
   
     Serial.println(F("Authorizing ticket"));
     SendTypeS(TRS, sizeof(TRS));  
-    sasError = false;
     waitForResponse(TRS[1], TEQ, sizeof(TEQ));
   
     // Report on common responses
