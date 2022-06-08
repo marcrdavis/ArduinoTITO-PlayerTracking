@@ -1,6 +1,6 @@
 # Arduino TITO and Player Tracking
 A homebrew slot machine TITO, player tracking and display project
-By Marc Davis (11/12/2021)
+By Marc Davis (06/07/2022)
 
   Project goals: To allow home slot machine owners the ability to add Ticket In/Ticket Out (TITO), 
   Remote Control, Monitoring and Player Tracking (Display/Keypad/Reader) to their SAS-Compatible 
@@ -10,6 +10,12 @@ By Marc Davis (11/12/2021)
   and compatible with the BETTORSlots TITO and TITO Deluxe hardware. Please see the included documentation for
   more details.
 
+  Build 20220607 Updates
+  
+  - Updates to TITO and TITO Deluxe sketches only; due to memory issues in the Deluxe sketch I have had to remove
+    the config.txt file support; the settings need to be applied to the sketch directly before downloading to 
+    the UNO. This will increase stability of the Deluxe sketch.
+  - Minor updates to the SAS portion of the code
 
   Build 20211112 Updates
   
