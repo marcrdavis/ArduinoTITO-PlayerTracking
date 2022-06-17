@@ -1,6 +1,6 @@
 # Arduino TITO and Player Tracking
 A homebrew slot machine TITO, player tracking and display project
-By Marc Davis (06/07/2022)
+By Marc Davis (06/17/2022)
 
   Project goals: To allow home slot machine owners the ability to add Ticket In/Ticket Out (TITO), 
   Remote Control, Monitoring and Player Tracking (Display/Keypad/Reader) to their SAS-Compatible 
@@ -9,6 +9,14 @@ By Marc Davis (06/07/2022)
   New in 20211031: The project now includes two new sketches for TITO-only hardware based on the Arduino UNO
   and compatible with the BETTORSlots TITO and TITO Deluxe hardware. Please see the included documentation for
   more details.
+
+  Build 20220617 Updates
+  
+  - Updates to MEGA Sketches only
+  - Adds 'autoAddCredits' feature which will automatically add the number of credits specified in 'changeCredits'
+    to the game when the credit meter is less than or equal to the 'creditFloor' value in the config file. To prevent
+    excessive polling the check only runs after the attract message resets; so it could take up to 30 seconds for the
+    credits to be added to the game
 
   Build 20220607 Updates
   
