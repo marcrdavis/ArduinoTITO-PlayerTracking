@@ -1,9 +1,9 @@
-Arduino TITO and Player Tracking Project (V2.0.20211112)
+Arduino TITO and Player Tracking Project (V2.0.20220617)
 Marc R. Davis
 
 PLAYER AND CONFIG FILE FORMATS
 
-The config file is a standard .TXT file in a â€˜property=valueâ€™ format. A default file is included in the download. Property names are CASE SENSITIVE. It has the following properties:
+The config file is a standard .TXT file in a ‘property=value’ format. A default file is included in the download. Property names are CASE SENSITIVE. It has the following properties:
 
 displayWidth=20 	<- The width of your display (columns or pixels - depending on display)
 displayHeight=2		<- The height of your character display (rows or pixels - depending on display)
@@ -15,23 +15,25 @@ localStorage=1  	<- Set to 1 to store data to the local SD card; Set to 0 to whe
 onlyTITO=0  		<- Set to 1 to disable player tracking and display features; Set to 0 to enable all features
 changeToCredits=0  	<- Set to 1 to enable pressing the Change/Service button to add credits to machine; Set to 0 to disable 
 changeCredits=200  	<- Number of credits to add to machine when changeToCredits option is enabled
-adminPin=1234  		<- NEW in 2.0.20210216; used to secure admin mode
-compPercentage=0.01  	<- NEW in 2.0.20210216; used to determine comp payback; Set to zero to disable comps
+adminPin=1234  		<- Used to secure admin mode
+compPercentage=0.01  	<- Used to determine comp payback; Set to zero to disable comps
 useDHCP=1  		<- Set to 1 to use DHCP to get IP Address from network; Set to 0 to manually enter an IP Address
 ipAddress=  		<- Manual IP Address if useDHCP is set to 0
 serverIPAddress=  	<- IP Address of server/machine hosting the card data; Do not set this to be itself
+autoAddCredits=0        <- MEGA ONLY; NEW in 20220617 - Set to 1 to automatically add the number of credits in 'changeCredits' to the game when the creditFloor value is reached
+creditFloor=10          <- MEGA ONLY; NEW in 20220617 - Set to a number greater than 0 at which point you want the game to automatically add credits if autoAddCredits is enabled
 gameName=Slot Machine  	<- A name for your machine
 casinoName=The CASINO  	<- The name of your casino which will appear on the display
-attractMessage=Welcome to the [CASINONAME]! Enjoy your stay! Please insert your Player Card     <- CHANGED in 2.0.20210216; variable renamed from scrollingText
+attractMessage=Welcome to the [CASINONAME]! Enjoy your stay! Please insert your Player Card     <- The attract message text
 playerMessage=Welcome back [CARDHOLDER]! Enjoy your stay in [CASINONAME]!   			<- Message when player card is inserted
 
-[CARDHOLDER] is a variable you can use in the playerMessage to show the Cardholderâ€™s name. Messages cannot exceed 255 characters.
+[CARDHOLDER] is a variable you can use in the playerMessage to show the Cardholder’s name. Messages cannot exceed 255 characters.
 [CASINONAME] is a variable you can use in the scrollingText or playerMessage to show the Casino Name.
 
 Scrolling messages have a length of 255 characters; Text fields have a length of 30 characters - except for the casinoName field which has a max length equal to the display width or 30 characters - whichever is less. All other fields are boolean or integer.
 
 
-The player file is a standard .TXT file in a â€˜property=valueâ€™ format. Property names are CASE SENSITIVE. The filename is based on the RFID Card ID, example: DA939819.TXT. On first use new cards automatically create a default file on the SD card (or server) with the following properties:
+The player file is a standard .TXT file in a ‘property=value’ format. Property names are CASE SENSITIVE. The filename is based on the RFID Card ID, example: DA939819.TXT. On first use new cards automatically create a default file on the SD card (or server) with the following properties:
 
 cardHolder=Player
 cardType=1
@@ -44,15 +46,15 @@ playerComps=0
 
 The cardHolder field can be customized with any name up to 30 characters. The CardType property must be a 1. The other properties will be updated automatically during game play.
 
-The Admin card is a standard .TXT file in a â€˜property=valueâ€™ format. Property names are CASE SENSITIVE. The filename is based on the RFID Card ID. A player card can be converted into an Admin card by replacing the file contents with these properties:
+The Admin card is a standard .TXT file in a ‘property=value’ format. Property names are CASE SENSITIVE. The filename is based on the RFID Card ID. A player card can be converted into an Admin card by replacing the file contents with these properties:
 
-cardHolder=Admin
+carHholder=Admin
 cardType=2
 
 The CardType property must be a 2.
 
 
-The System Bonus card is a standard .TXT file in a â€˜property=valueâ€™ format. Property names are CASE SENSITIVE. The filename is based on the RFID Card ID. A player card can be converted into a System Bonus card by replacing the file contents with these properties:
+The System Bonus card is a standard .TXT file in a ‘property=value’ format. Property names are CASE SENSITIVE. The filename is based on the RFID Card ID. A player card can be converted into a System Bonus card by replacing the file contents with these properties:
 
 cardHolder=SYSTEM BONUS
 cardType=3

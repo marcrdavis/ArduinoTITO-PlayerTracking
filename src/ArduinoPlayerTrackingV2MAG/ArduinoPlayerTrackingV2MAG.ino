@@ -1,5 +1,5 @@
 /*
-  Arduino TITO and Player Tracking v2.0.20220607 MAGSTRIPE
+  Arduino TITO and Player Tracking v2.0.20220617 MAGSTRIPE
   by Marc R. Davis - Copyright (c) 2020-2022 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
@@ -129,7 +129,7 @@ String creditsToAdd = "1000";
 String changeCredits = "100";
 String gameName = "Slot Machine";
 String stringData = "";
-String versionString = "2.0.20220607";
+String versionString = "2.0.20220617";
 
 char ipAddress[15];
 char casinoName[30] = "THE CASINO";  // actual text should not exceed the display width
@@ -715,7 +715,7 @@ void readConfig()
   if (ini.getValue(NULL, "changeCredits", buffer, 256)) changeCredits = String(buffer);
   if (ini.getValue(NULL, "gameName", buffer, 256)) gameName = String(buffer);
   if (ini.getValue(NULL, "compPercentage", buffer, 256)) compPercentage = atof(buffer);
-  if (ini.getValue(NULL, "autoAddCredits", buffer, 256)) autoAddCredits = String(buffer);
+  if (ini.getValue(NULL, "autoAddCredits", buffer, 256)) autoAddCredits =  atoi(buffer);
   if (ini.getValue(NULL, "creditFloor", buffer, 256)) creditFloor = atol(buffer);
 
   if (creditFloor == 0 && autoAddCredits == 1)
