@@ -10,6 +10,11 @@ By Marc Davis (06/17/2022)
   and compatible with the BETTORSlots TITO and TITO Deluxe hardware. Please see the included documentation for
   more details.
 
+  Build 20220726 Updates
+  
+  - Updates to MEGA Sketches only
+  - Fixes an issue where comp credits could go negative
+    
   Build 20220617 Updates
   
   - Updates to MEGA Sketches only
