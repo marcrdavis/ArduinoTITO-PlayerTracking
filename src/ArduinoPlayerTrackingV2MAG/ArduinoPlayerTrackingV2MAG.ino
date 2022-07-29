@@ -1,5 +1,5 @@
 /*
-  Arduino TITO and Player Tracking v2.0.20220617 MAGSTRIPE
+  Arduino TITO and Player Tracking v2.0.20220726 MAGSTRIPE
   by Marc R. Davis - Copyright (c) 2020-2022 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
@@ -129,7 +129,7 @@ String creditsToAdd = "1000";
 String changeCredits = "100";
 String gameName = "Slot Machine";
 String stringData = "";
-String versionString = "2.0.20220617";
+String versionString = "2.0.20220726";
 
 char ipAddress[15];
 char casinoName[30] = "THE CASINO";  // actual text should not exceed the display width
@@ -536,7 +536,8 @@ void useCompCredits()
   else {
    if (addCredits(String(creds)))
    {
-      playerComps=playerComps-creds;    
+      // Reset comps to zero
+      playerComps=0;    
   
       // Call this now to write back the changed playerComps; the other values will be updated when the card is removed
       if (localStorage) writePlayerDataToSD(lastCardID, cardType, cardHolder, playerTotalGames, playerGamesWon, playerGamesLost, playerTotalWon, playerComps);
@@ -786,6 +787,7 @@ String readPlayerDataFromSD(String cid, bool remote)
       if (ini.getValue(NULL, "playerComps", buffer, 30)) playerComps = atof(buffer);
      
       if (cardHolder == "") cardHolder = "Player";
+      if (playerComps < 0) playerComps = 0;
     }
     ini.close();
   }
@@ -1191,6 +1193,7 @@ void updatePlayerStats()
       else
       {
         Serial.println(F("Updating player stats"));
+        if (playerComps < 0) playerComps = 0;
         if (localStorage) writePlayerDataToSD(lastCardID, cardType, cardHolder, playerTotalGames, playerGamesWon, playerGamesLost, playerTotalWon, playerComps);
         else writePlayerDataToServer(lastCardID, cardType, cardHolder, playerTotalGames, playerGamesWon, playerGamesLost, playerTotalWon, playerComps);
       }
@@ -1347,7 +1350,6 @@ bool setupPlayerMessage(bool skipBuffer)
   stringData = String(scrollBuffer);
   stringData.replace("[CARDHOLDER]", cardHolder);
   stringData.replace("[CASINONAME]", casinoName);  
-  int creds = playerComps;
   if (playerComps>1 && !skipBuffer) stringData += "You have Comp Credits available! Press [ENT] to access Player Menu.                    ";
   stringData.toCharArray(scrollBuffer, stringData.length() + 1); 
   resetScroll=true;
@@ -2001,6 +2003,9 @@ bool unlockMachine()
 {
   SendTypeS(ULOCK, sizeof(LOCK));
   isLocked=false;
+  if (cardType == 1) setupPlayerMessage(false);
+  else setupAttractMessage();
+  
   return waitForACK(SASAdr,"Game Unlocked");
 }
 
