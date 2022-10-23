@@ -82,6 +82,11 @@ void MagStripe::stop()
 }
 
 
+void MagStripe::flush()
+{
+	// Do nothing for now
+}
+
 bool MagStripe::available()
 {
     return digitalRead(this->pin_cls) == LOW;
@@ -102,7 +107,7 @@ short MagStripe::read(char *data, unsigned char size)
     unsigned long currentMillis = millis();
 
     // Wait while the data is being read by the interrupt routines...
-    while (!this->available2() && (millis() - currentMillis < 1000) ) { }
+    while (!this->available2() && (millis() - currentMillis < 900) ) { }
 
     // Decode the raw bits...
     short chars = this->decode_bits(data, size);

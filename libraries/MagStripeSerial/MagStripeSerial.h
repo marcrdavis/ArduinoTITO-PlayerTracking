@@ -1,9 +1,9 @@
 /*
- * MagStripe - Read data from a magnetic stripe card.
+ * MagStripeSerial - Read data from a magnetic stripe card.
  *
- * Copyright (c) 2010 Carlos Rodrigues <cefrodrigues@gmail.com>
- * Modified by Marc Davis - March 12, 2021
+ * Copyright (c) 2022 Marc Davis
  * This version only supports insert-type card readers
+ * Tested Devices: XS Technologies PI70-120-TLA-DFR
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,13 +23,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  *
- * Based on this: http://cal.freeshell.org/2009/11/magnetic-stripe-reader/
- *   ...and this: http://www.abacus21.com/Magnetic-Strip-Encoding-1586.html
  */
 
 
-#ifndef MAGSTRIPE_H
-#define MAGSTRIPE_H
+#ifndef MagStripeSerial_H
+#define MagStripeSerial_H
 
 
 #if ARDUINO < 100
@@ -39,34 +37,19 @@
 #endif
 
 
-// The data and clock pins depend on the board model...
-#if defined(__AVR_ATmega32U4__)
-   // Arduino Leonardo and Arduino Micro:
-#  define MAGSTRIPE_RDT 21  /* data pin */
-#  define MAGSTRIPE_RCL 20  /* clock pin */
-#else
-   // Arduino Uno and Arduino Mega:
-#  define MAGSTRIPE_RDT 20  /* data pin */
-#  define MAGSTRIPE_RCL 21  /* clock pin */
-#endif
-
-#define MAGSTRIPE_CLS 8  /* card present pin */
-#define MAGSTRIPE_CLD 9  /* card fully inserted pin */
+#define MagStripeSerial_CLS 2  /* card present pin */
+#define MagStripeSerial_CLD 2  /* card fully inserted pin - used here for backwards compatibility with MagStripe */
 
 
-// Cards can be read in one of these possible ways...
-enum ReadDirection { READ_UNKNOWN, READ_FORWARD, READ_BACKWARD };
-
-
-class MagStripe {
+class MagStripeSerial {
     public:
         // The CLS pin can be changed from the default...
-        MagStripe(unsigned char cls=MAGSTRIPE_CLS, unsigned char cld=MAGSTRIPE_CLD);
+        MagStripeSerial(unsigned char cls=MagStripeSerial_CLS, unsigned char cld=MagStripeSerial_CLD);
 
-        // Initialize the library (attach interrupts)...
+        // Initialize the library 
         void begin(unsigned char track);
 
-        // Deinitialize the library (detach interrupts)...
+        // Deinitialize the library 
         void stop();
 
         // Flush Buffer
@@ -75,30 +58,17 @@ class MagStripe {
         // Check if there is a card present for reading...
         bool available();
 
-        // Check if there is a card fully inserted for reading...
+        // Check if there is a card fully inserted for reading... for backwards compatibility only
         bool available2();
 
         // Read the data from the card as ASCII...
         short read(char *data, unsigned char size);
 
-        // The direction of the last card read...
-        enum ReadDirection read_direction();
-
     private:
         unsigned char pin_cls;
         unsigned char pin_cld;
         unsigned char track;
-        enum ReadDirection direction;
-
-        void reverse_bits();
-        bool verify_parity(unsigned char c);
-        bool verify_lrc(short start, short length);
-        short find_sentinel(unsigned char pattern);
-        short decode_bits(char *data, unsigned char size);
 };
 
 
-#endif  /* MAGSTRIPE_H */
-
-
-/* vim: set expandtab ts=4 sw=4: */
+#endif  /* MagStripeSerial_H */
