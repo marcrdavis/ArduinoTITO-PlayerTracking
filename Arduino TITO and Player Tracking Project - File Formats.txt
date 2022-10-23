@@ -1,4 +1,4 @@
-Arduino TITO and Player Tracking Project (V2.0.20220617)
+Arduino TITO and Player Tracking Project (V2.0.20221023)
 Marc R. Davis
 
 PLAYER AND CONFIG FILE FORMATS
@@ -17,11 +17,13 @@ changeToCredits=0  	<- Set to 1 to enable pressing the Change/Service button to 
 changeCredits=200  	<- Number of credits to add to machine when changeToCredits option is enabled
 adminPin=1234  		<- Used to secure admin mode
 compPercentage=0.01  	<- Used to determine comp payback; Set to zero to disable comps
+wifiSSID= 		<- NEW in 2.0.20221023! Used in the Wifi/ESP8266 compatible sketch
+wifiPassword= 		<- NEW in 2.0.20221023! Used in the Wifi/ESP8266 compatible sketch
 useDHCP=1  		<- Set to 1 to use DHCP to get IP Address from network; Set to 0 to manually enter an IP Address
 ipAddress=  		<- Manual IP Address if useDHCP is set to 0
 serverIPAddress=  	<- IP Address of server/machine hosting the card data; Do not set this to be itself
-autoAddCredits=0        <- MEGA ONLY; NEW in 20220617 - Set to 1 to automatically add the number of credits in 'changeCredits' to the game when the creditFloor value is reached
-creditFloor=10          <- MEGA ONLY; NEW in 20220617 - Set to a number greater than 0 at which point you want the game to automatically add credits if autoAddCredits is enabled
+autoAddCredits=0        <- MEGA ONLY - Set to 1 to automatically add the number of credits in 'changeCredits' to the game when the creditFloor value is reached
+creditFloor=10          <- MEGA ONLY - Set to a number greater than 0 at which point you want the game to automatically add credits if autoAddCredits is enabled
 gameName=Slot Machine  	<- A name for your machine
 casinoName=The CASINO  	<- The name of your casino which will appear on the display
 attractMessage=Welcome to the [CASINONAME]! Enjoy your stay! Please insert your Player Card     <- The attract message text
