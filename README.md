@@ -10,7 +10,7 @@ By Marc Davis (10/23/2022)
   with the BETTORSlots TITO and TITO Deluxe hardware. Please see the included documentation for
   more details.
 
-  NEW! The MEGA Sketches now support ESP8266 WiFi! The easiest way is to use the Songhe Mega2560 + WiFi R3; 
+  NEW! The MEGA sketches now support ESP8266 WiFi! The easiest way is to use the Songhe Mega2560 + WiFi R3; 
   or you can use any compatible ESP8266 module
 
   Build 20221023 Updates
