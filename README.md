@@ -15,6 +15,8 @@ By Marc Davis (10/23/2022)
 
   Build 20221023 Updates
   
+  THERE ARE CHANGES TO THE CONFIG.TXT FILE IN THIS BUILD! PLEASE UPDATE YOUR CONFIG.TXT FILE AS PER THE DOCUMENTATION
+  
   - Adds support for ESP8266 WiFi via the Songhe Mega2560 + WiFi R3 board; other ESP8266 implementations may work as well
   - Adds support for the Futaba NA202SD08FA display using the included FutabaVFD library
   - Adds support for the XS Technologies PI70-120-TLA-DFR magnetic card reader using the included MagStripeSerial library
