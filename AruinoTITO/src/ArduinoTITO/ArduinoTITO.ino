@@ -1,13 +1,13 @@
 /*
-  Arduino TITO v2.0.20220607T
-  by Marc R. Davis - Copyright (c) 2020-2021 All Rights Reserved
+  Arduino TITO v2.0.20221023T
+  by Marc R. Davis - Copyright (c) 2020-2022 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
   Portions of the Arduino SAS protocol implementation by Ian Walker - Thank you!
   Additional testing and troubleshooting by NLG member Eddiiie - Thank you!
 
   Hardware requirements: 
-    Arduino Uno; Serial Port;
+    Arduino Uno; Serial Port
 
   For TITO setup please follow the included documentation
 
