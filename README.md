@@ -183,14 +183,14 @@ By Marc Davis (10/23/2022)
   - Minor html markup fixes to WebUI
   
   Hardware requirements: 
-    Arduino Mega 2560 R3; RFID RC 522 or compatible Magnetic Card Reader; W5100 Ethernet Shield; Serial Port board;
-    Compatible vacuum fluorescent display or LCD; if using a display other than the default LCD then
-    modifications will be required - see inline comments; Compatible keypad; if using a keypad other than
-    the default Bally 6x2/3x4 then modifications will be required - see inline comments; Modifications will 
-    be required if using another type of ethernet shield; Wifi shields are NOT recommended
+    Arduino Mega 2560 R3/Songhe Mega2560 + WiFi R3/Arduino Uno; RFID RC 522 or compatible Magnetic Card Reader; 
+    W5100 Ethernet Shield; Serial Port board; Compatible vacuum fluorescent display or LCD; if using a display
+    other than the default LCD then modifications will be required - see inline comments; Compatible keypad; if
+    using a keypad other than the default Bally 6x2/3x4 then modifications will be required - see inline comments; 
+    Modifications will be required if using another type of ethernet shield
 
   Software requirements:
-    If using an IEE or Noritake VFD You will need my modified version of the libraries included in the zip file
+    If using an IEE, Futaba or Noritake VFD You will need my modified version of the libraries included in the zip file
 
   Upgrading from earlier versions:
     Be sure to check the sample config.txt file in the zip file for new or changed parameters that may be required
