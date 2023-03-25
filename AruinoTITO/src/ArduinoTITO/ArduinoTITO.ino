@@ -1,6 +1,6 @@
 /*
-  Arduino TITO v2.0.20221023T
-  by Marc R. Davis - Copyright (c) 2020-2022 All Rights Reserved
+  Arduino TITO v2.0.20230325T
+  by Marc R. Davis - Copyright (c) 2020-2023 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
   Portions of the Arduino SAS protocol implementation by Ian Walker - Thank you!
@@ -31,7 +31,7 @@
 bool changeToCredits = 0; // UPDATE BEFORE COMPILING - Set to 1 to enable Change to Credits
 bool sasError = false;
 
-String changeCredits = "500"; // UPDATE BEFORE COMPILING - Set the number of credits to add on each push of the change/service button
+char* changeCredits = "500"; // UPDATE BEFORE COMPILING - Set the number of credits to add on each push of the change/service button
 
 // ------------------------------------------------------------------------------------------------------------
 // SAS Protocol Variables
@@ -64,9 +64,6 @@ byte COS [5];
 
 void setup()
 {
-  // Variable Reserves
-  changeCredits.reserve(5);
-  
   // Setup SAS/TITO Communications
   Serial.begin(19200);
   Serial.setTimeout(200);

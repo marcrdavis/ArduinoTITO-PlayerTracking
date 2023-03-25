@@ -1,6 +1,6 @@
 /*
-  Arduino TITO Deluxe v2.0.20221023D
-  by Marc R. Davis - Copyright (c) 2020-2022 All Rights Reserved
+  Arduino TITO Deluxe v2.0.20230325D
+  by Marc R. Davis - Copyright (c) 2020-2023 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
   Portions of the Arduino SAS protocol implementation by Ian Walker - Thank you!
@@ -32,24 +32,23 @@
 // Required Libraries
 // ------------------------------------------------------------------------------------------------------------
 
+#include <IniFile.h>
 #include <SPI.h>
 #include <SD.h>
-#include <Ethernet.h>
+#include <Ethernet.h>  // Must use version 1.0.4 due to memory issues
 
 // ------------------------------------------------------------------------------------------------------------
 // Core Variables
 // ------------------------------------------------------------------------------------------------------------
 
-bool changeToCredits = 0; // UPDATE BEFORE COMPILING - Set to 1 to enable Change to Credits
+bool changeToCredits = 0; // Set to 1 to enable Change to Credits - set in code or read from config.txt
+bool useDHCP = 1; // Set to 1 to enable DHCP - set in code or read from config.txt
 bool sasError = false;
-bool isLocked = false;
 
-String changeCredits = "500";  // UPDATE BEFORE COMPILING - Set the number of credits to add on each push of the change/service button
-String stringData = "";
-String url = "";
+char* changeCredits = "500"; // Credits to add - set in code or read from config.txt
 
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }; // UPDATE BEFORE COMPILING - Change to unique address for each board 
-IPAddress ip(192, 168, 1, 254);  // UPDATE BEFORE COMPILING - Device IP Address
+IPAddress ip(192, 168, 1, 254); // Your default IP address - set in code or read from config.txt
 
 // ------------------------------------------------------------------------------------------------------------
 // SAS Protocol Variables
@@ -68,6 +67,8 @@ byte LOCK[4] = {SASAdr, 0x01, 0x00, 0x00};
 byte ULOCK[4] = {SASAdr, 0x02, 0x00, 0x00};
 byte MUTE[4] = {SASAdr, 0x03, 0x00, 0x00};
 byte UMUTE[4] = {SASAdr, 0x04, 0x00, 0x00};
+byte EBILL[4] = {SASAdr, 0x06, 0x00, 0x00};
+byte DBILL[4] = {SASAdr, 0x07, 0x00, 0x00};
 byte EVInfo[5] = {SASAdr, 0x4D, 0x00, 0x00, 0x00};
 byte transComplete[6] = {SASAdr, 0x71, 0x01, 0xFF, 0x1F, 0xD0};
 byte mCredits[2] = {SASAdr, 0x1A};
@@ -78,10 +79,8 @@ byte mgamesWon[2] = {SASAdr, 0x16};
 byte mgamesLost[2] = {SASAdr, 0x17};
 
 byte LBS [9];
-byte PCR [10];
 byte SVN [13];
 byte TPS [35];
-byte HPS [24];
 byte TEQ [21];
 byte TRS [21];
 byte COT [10];
@@ -102,18 +101,17 @@ EthernetServer server(80);
 
 void setup()
 {
-  // Variable Reserves
-  changeCredits.reserve(5);
-  stringData.reserve(240);
-  url.reserve(15);
-  
   // Setup SAS/TITO Communications
   Serial.begin(19200);
   Serial.setTimeout(200);
   pinMode(LED_BUILTIN, OUTPUT);
 
   // Setup SD Card
+  SPI.begin();
   initSDCard();
+
+  // Read the config file
+  readConfig();
  
   // Initialize Ethernet
   initEthernet();
@@ -159,6 +157,33 @@ void initSDCard()
   }
 }
 
+// Read the configuration from SD card
+
+void readConfig()
+{
+  char buffer[40];
+  IniFile ini("config.txt");
+
+  if (!ini.open())
+  {
+    Serial.println(F("Config file is missing!"));
+    return;
+  }
+
+  if (ini.getValue(NULL, "changeToCredits", buffer, 40)) changeToCredits = atoi(buffer);
+  if (ini.getValue(NULL, "useDHCP", buffer, 40)) useDHCP = atoi(buffer);
+  if (ini.getValue(NULL, "changeCredits", buffer, 40)) strcpy(changeCredits, buffer);
+
+  if (ini.getValue(NULL, "ipAddress", buffer, 40))
+  {
+    char ipAddress[15];
+    strcpy(ipAddress, buffer);
+    ip.fromString((ipAddress));
+  }
+
+  ini.close();
+}
+
 // ------------------------------------------------------------------------------------------------------------
 // Network Functions
 // ------------------------------------------------------------------------------------------------------------
@@ -168,9 +193,10 @@ void initSDCard()
 void initEthernet()
 {
   // Start the Ethernet connection and the server
-  // Need version 1.0.4 of Ethernet Library due to memory constraints
   
-  Ethernet.begin(mac, ip);
+  if (useDHCP) Ethernet.begin(mac);
+  else Ethernet.begin(mac, ip);
+  
   ip = Ethernet.localIP();
   delay(1000);
 }
@@ -206,68 +232,24 @@ bool addCredits(String credits)
 
 // Get a value in a string of data split by a separator character
 
-String getValue(const String &data, char separator, int index)
+char* getParamValue(char* querystring, const char* param, int offset) 
 {
-  int found = 0;
-  int strIndex[] = { 0, -1 };
-  int maxIndex = data.length() - 1;
-
-  for (int i = 0; i <= maxIndex && found <= index; i++)
-  {
-    if (data.charAt(i) == separator || i == maxIndex)
-    {
-      found++;
-      strIndex[0] = strIndex[1] + 1;
-      strIndex[1] = (i == maxIndex) ? i + 1 : i;
+  char* ptr = strstr(querystring, param); // Find the parameter in the querystring
+  if (ptr != NULL) {
+    ptr += strlen(param)+1+offset; // Move pointer to the value of the parameter
+    char* endptr = strchr(ptr, '&'); // Find the end of the value (either the next parameter or end of the string)
+    if (endptr == NULL) endptr = strchr(ptr, ' '); // find the end of the value (space)
+    if (endptr != NULL) {
+      size_t length = endptr - ptr; // Calculate the length of the value
+      char* value = (char*) malloc(length + 1); // Allocate memory for the value
+      strncpy(value, ptr, length); // Copy the value to the allocated memory
+      value[length] = '\0'; // Null-terminate the string
+      return value;
+    } else { // If no next parameter found, the value extends to the end of the string
+      return ptr;
     }
   }
-  return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
-}
-
-// Used by urlDecode
-
-unsigned char h2int(char c)
-{
-  if (c >= '0' && c <= '9') {
-    return ((unsigned char)c - '0');
-  }
-  if (c >= 'a' && c <= 'f') {
-    return ((unsigned char)c - 'a' + 10);
-  }
-  if (c >= 'A' && c <= 'F') {
-    return ((unsigned char)c - 'A' + 10);
-  }
-  return (0);
-}
-
-// Decode querystring parameters
-
-String urlDecode(String str)
-{
-  String decodedString = "";
-  char c;
-  char code0;
-  char code1;
-  for (int i = 0; i < str.length(); i++) {
-    c = str.charAt(i);
-    if (c == '+') {
-      decodedString += ' ';
-    } else if (c == '%') {
-      i++;
-      code0 = str.charAt(i);
-      i++;
-      code1 = str.charAt(i);
-      c = (h2int(code0) << 4) | h2int(code1);
-      decodedString += c;
-    } else {
-
-      decodedString += c;
-    }
-
-    yield();
-  }
-
-  return decodedString;
+  return NULL; // Parameter not found in the querystring
 }
 
 // ------------------------------------------------------------------------------------------------------------
@@ -276,86 +258,77 @@ String urlDecode(String str)
 
 void htmlPoll()
 {
+  Ethernet.maintain();
+  
   EthernetClient client = server.available();
   if (!client) return;
   
   if (client.connected()) // If client is present and connected
   {
     bool reqResult = false;
-    stringData = "";
+    char stringData[150];  // Anything greater and the app becomes unstable
+    memset(stringData, 0, sizeof(stringData));
     
-    stringData = client.readStringUntil('\n'); // Get the first line of request
-    
-    // Check for known GET commands
+    int size = client.readBytesUntil('\n', stringData, 150); // Get the first line of request
     while (client.available()) client.read(); // Get the rest of the header and discard
-
-    url = getValue(getValue(stringData, ' ', 1), '?', 0);
-    stringData = getValue(getValue(stringData, ' ', 1), '?', 1);
-
+   
     // Parse querystring
-    // Uses and expands on codes from BETTORSlots TITO for compatibility with remote app
-    String command = stringData.substring(0, 2);
- 
-    if (url.equals("/") && command != "")
+
+    if (strstr(stringData,"ds=")) // Game Statistics
     {
-      if (command == "ds") // Game Statistics
-      {
-        client.print(F("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n<html>\r\n"));
-        client.print(F("<head></head><body><h2>GAME STATISTICS</h2><br>"));
-        client.print(F("Credits<br>"));
-        client.print(pollMeters(mCredits));
-        client.print(F("<br>Total In<br>"));
-        client.print(pollMeters(mCoinIn));
-        client.print(F("<br>Total Won<br>"));
-        client.print(pollMeters(mTotWon));
-        client.print(F("<br>Total Games<br>"));
-        client.print(pollMeters(mTotGames));
-        client.print(F("<br>Games Won<br>"));
-        client.print(pollMeters(mgamesWon));
-        client.print(F("<br>Games Lost<br>"));
-        client.print(pollMeters(mgamesLost));
-        client.print(F("<br>"));      
-        client.print(F("</body>"));
-        client.print(F("</html>\r\n\r\n"));
-        client.stop();
-        return;
-      }
+      client.print(F("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n"));
+      client.print(F("<html>\r\n<head></head><body><h2>GAME STATISTICS</h2><br>"));
+      client.print(F("Credits<br>"));
+      client.print(pollMeters(mCredits));
+      client.print(F("<br>Total In<br>"));
+      client.print(pollMeters(mCoinIn));
+      client.print(F("<br>Total Won<br>"));
+      client.print(pollMeters(mTotWon));
+      client.print(F("<br>Total Games<br>"));
+      client.print(pollMeters(mTotGames));
+      client.print(F("<br>Games Won<br>"));
+      client.print( pollMeters(mgamesWon));
+      client.print(F("<br>Games Lost<br>"));
+      client.print(pollMeters(mgamesLost));
+      client.print(F("<br></body></html>\r\n\r\n"));      
 
-      // All of the remaining commands return a single status or a result code
-      
-      if (command == "mo") reqResult=mute();
-      if (command == "mt") reqResult=unMute();
-      if (command == "lk") reqResult=lockMachine();
-      if (command == "uk") reqResult=unlockMachine();
-      
-      if (command == "ud") // Update Ticket Data
-      {
-        String location = urlDecode(getValue(getValue(stringData, '&', 0), '=', 1));
-        String address1 = urlDecode(getValue(getValue(stringData, '&', 1), '=', 1));
-        String address2 = urlDecode(getValue(getValue(stringData, '&', 2), '=', 1));
-
-        reqResult=SetTicketData(location, address1, address2);
-      }
-     
-      if (command == "cr")  // Add Credits to game
-      {
-        String credits = getValue(getValue(stringData, '&', 1), '=', 1);
-        reqResult=addCredits(credits);
-      }
-      
-      // Send status/result to client
-      client.println(F("HTTP/1.1 200 OK\r\n\r\n"));
-      if (reqResult) client.print(F("OK"));
-      else client.print(F("ERROR"));
+      client.stop();
+      return;
     }
-    else if (url.equals("/"))
+
+    // All of the remaining commands return a single status or a result code
+    
+    if (strstr(stringData,"mo=")) reqResult=slotCommand(MUTE,4);
+    if (strstr(stringData,"mt=")) reqResult=slotCommand(UMUTE,4);
+    if (strstr(stringData,"lk=")) reqResult=slotCommand(LOCK,4);
+    if (strstr(stringData,"uk=")) reqResult=slotCommand(ULOCK,4);
+    if (strstr(stringData,"eb=")) reqResult=slotCommand(EBILL,4);
+    if (strstr(stringData,"db=")) reqResult=slotCommand(DBILL,4);
+    if (strstr(stringData,"ec=")) changeCredits=1;
+    if (strstr(stringData,"dc=")) changeCredits=0;
+    
+    if (strstr(stringData,"ud=")) // Update Ticket Data
+    {
+      char* location = getParamValue(stringData, "ud1",0);
+      char* address1 = getParamValue(stringData, "ud2",0);
+      char* address2 = getParamValue(stringData, "ud3",0);
+      reqResult=SetTicketData(location, address1, address2);
+    }
+   
+    if (strstr(stringData,"cr=")) // Add Credits to game
+    {
+      char* credits = getParamValue(stringData, "cr",4);
+      reqResult=addCredits(credits);
+    }
+
+    if (strstr(stringData, "GET / HTTP/1.1"))
     {
       // Show web interface
       sdFile = SD.open("index.htm", FILE_READ);
       if (sdFile)
       {
         client.print(F("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n"));
-
+      
         while (sdFile.available()) {
           client.write(sdFile.read());
         }
@@ -367,11 +340,14 @@ void htmlPoll()
         // UI Not available (SD Card error?)
         client.print(F("HTTP/1.1 503 Service not available\r\n\r\n"));
       }
+
     }
     else
-    {
-      // Everything else is a 404
-      client.print(F("HTTP/1.1 404 Not Found\r\n\r\n"));
+    {        
+      // Send status/result to client
+      client.println(F("HTTP/1.1 200 OK\r\n\r\n"));
+      if (reqResult) client.print(F("OK"));
+      else client.print(F("ERROR"));
     }
 
     client.stop();
@@ -481,29 +457,9 @@ long pollMeters(byte * meter)
   return sMeter.toInt();
 }
 
-bool lockMachine()
+bool slotCommand(byte cmd[], int len)
 {
-  SendTypeS(LOCK, sizeof(LOCK));
-  isLocked=true;
-  return waitForACK(SASAdr);
-}
-
-bool unlockMachine()
-{
-  SendTypeS(ULOCK, sizeof(LOCK));
-  isLocked=false;
-  return waitForACK(SASAdr);
-}
-
-bool mute()
-{
-  SendTypeS(MUTE, sizeof(MUTE));
-  return waitForACK(SASAdr);
-}
-
-bool unMute()
-{
-  SendTypeS(UMUTE, sizeof(UMUTE));
+  SendTypeS(cmd, len);
   return waitForACK(SASAdr);
 }
 
