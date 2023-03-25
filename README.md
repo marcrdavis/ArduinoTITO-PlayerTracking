@@ -18,7 +18,7 @@ By Marc Davis (03/25/2023)
   Build 20230325 Updates
   
   - Updates to the TITO and TITO Deluxe Sketches only
-  - Refactored code to remove using String variables and to free up additional memory on the Uno hardware
+  - Refactored code to remove usage of String variables and to free up additional memory on the Uno hardware
   - Restores the config.txt file to the TITO Deluxe sketch for configuration of basic parameters
   - Adds additional remote control options to the Deluxe sketch; including Bill Validator controls and Change to Credits
   - The code optimizations in the Deluxe version will eventually be ported back into the main project
