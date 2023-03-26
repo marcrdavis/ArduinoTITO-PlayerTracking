@@ -11,9 +11,9 @@ By Marc Davis (03/25/2023)
   more details.
 
   NEW! The MEGA sketches now support ESP8266 WiFi! The easiest way is to use the Songhe Mega2560 + WiFi R3; 
-  or you can use any compatible ESP8266 module. I am currently testing a Wifi version of the Robotdyn Uno WiFi R3 however
-  the code is not stable yet and may never be due to the overhead of the WifiAT library. There are also a lot of configuration
-  steps with this hardware which make it unfriendly for the un-initiated. 
+  or you can use any compatible ESP8266 module. I am currently testing a Wifi version of the Deluxe sketch with the
+  Robotdyn Uno WiFi R3 - however the code is not stable yet and may never be due to the overhead of the WifiAT library. 
+  There are also a lot of configuration steps with this hardware which make it unfriendly for the un-initiated. 
 
   Build 20230325 Updates
   
