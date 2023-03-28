@@ -1,5 +1,5 @@
 /*
-  Arduino TITO Deluxe v2.0.20230325D
+  Arduino TITO Deluxe v2.0.20230328D
   by Marc R. Davis - Copyright (c) 2020-2023 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
@@ -304,8 +304,8 @@ void htmlPoll()
     if (strstr(stringData,"uk=")) reqResult=slotCommand(ULOCK,4);
     if (strstr(stringData,"eb=")) reqResult=slotCommand(EBILL,4);
     if (strstr(stringData,"db=")) reqResult=slotCommand(DBILL,4);
-    if (strstr(stringData,"ec=")) changeCredits=1;
-    if (strstr(stringData,"dc=")) changeCredits=0;
+    if (strstr(stringData,"ec=")) changeToCredits=1;
+    if (strstr(stringData,"dc=")) changeToCredits=0;
     
     if (strstr(stringData,"ud=")) // Update Ticket Data
     {
