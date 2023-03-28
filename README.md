@@ -1,6 +1,6 @@
 # Arduino TITO and Player Tracking
 A homebrew slot machine TITO, player tracking and display project
-By Marc Davis (03/25/2023)
+By Marc Davis (03/28/2023)
 
   Project goals: To allow home slot machine owners the ability to add Ticket In/Ticket Out (TITO), 
   Remote Control, Monitoring and Player Tracking (Display/Keypad/Reader) to their SAS-Compatible 
@@ -15,6 +15,11 @@ By Marc Davis (03/25/2023)
   Robotdyn Uno WiFi R3 - however the code is not stable yet and may never be due to the overhead of the WifiAT library. 
   There are also a lot of configuration steps with this hardware which make it unfriendly for the un-initiated. 
 
+  Build 20230328 Updates
+  
+  - Updates to the TITO and TITO Deluxe Sketches only
+  - Fixes a bug in the ChangeToCredits option in the WebUI - sorry!
+  
   Build 20230325 Updates
   
   - Updates to the TITO and TITO Deluxe Sketches only
