@@ -1,5 +1,5 @@
 /*
-  Arduino TITO and Player Tracking v2.0.20221023 Ethernet + RFID
+  Arduino TITO and Player Tracking v2.0.20230706 Ethernet + RFID
   by Marc R. Davis - Copyright (c) 2020-2022 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
@@ -50,7 +50,7 @@
 //#include <FutabaVFD.h>            // Enable for Futaba VFDs; Disable other display includes
 
 // LCDs
-#include <LiquidCrystal.h>         // Enable this for LCDs; Disable other display includes
+#include <LiquidCrystal.h>          // Enable this for LCDs; Disable other display includes
 
 // Noritake GU-7000s
 //#include <GU7000_Interface.h>     // Enable this for GU-7000 Series VFDs; Disable other display includes
@@ -131,7 +131,7 @@ String creditsToAdd = "1000";
 String changeCredits = "100";
 String gameName = "Slot Machine";
 String stringData = "";
-String versionString = "2.0.20221020";
+String versionString = "2.0.20230706";
 
 char ipAddress[15];
 char casinoName[30] = "THE CASINO";  // actual text should not exceed the display width
@@ -169,8 +169,6 @@ int LED = 13;
 byte SASAdr = 0x01;
 byte CRCH = 0x00;
 byte CRCL = 0x00;
-byte SASEvent [1];
-byte returnStatus[1];
 
 byte SVNS[2] = {SASAdr, 0x57};
 byte TP[2] = {SASAdr, 0x70};
@@ -241,7 +239,6 @@ char keys[ROW_NUM][COLUMN_NUM] = {
 // Pin definition
 byte pin_rows[ROW_NUM] = {39, 38, 41}; // Keypad Pins 1,2,3
 byte pin_column[COLUMN_NUM] = {45, 42, 43, 40}; // Keypad Pins 7,6,5,4
-
 
 // ACT 8x2 Keypad
 /*const int ROW_NUM = 4; // Keypad is physically 8x2 but presents as a 4x4 matrix
@@ -415,12 +412,12 @@ void loop()
       {
         // Admin Menu Options
         if (key == '1') adminAddCredits();
-        if (key == '2') unMute();
-        if (key == '3') mute();
-        if (key == '4') unlockMachine();
-        if (key == '5') lockMachine();
-        if (key == '6') enableBV();
-        if (key == '7') disableBV();
+        if (key == '2') slotCommand(UMUTE,4,"Sound On");
+        if (key == '3') slotCommand(MUTE,4,"Sound Off");
+        if (key == '4') slotCommand(ULOCK,4,"Game Unlocked");
+        if (key == '5') slotCommand(LOCK,4,"Game Locked");
+        if (key == '6') slotCommand(EBILL,4,"BV Enabled");
+        if (key == '7') slotCommand(DBILL,4,"BV Disabled");
         if (key == '8') changeButtonToCredits(true);
         if (key == '9') changeButtonToCredits(false);
         if (key == '0') { 
@@ -469,7 +466,7 @@ void loop()
           waitingForStart=false;
           timeExpired=false;
           winMeterStart = pollMeters(mTotWon);
-          unlockMachine();
+          slotCommand(ULOCK,4,"Game Unlocked");
           vfd.clear();
           showMessageOnVFD("Score: 0",0);
         }
@@ -488,7 +485,7 @@ void loop()
         if (endTime - now() <= 0) {
           // End Tournament play
           timeExpired=true;
-          lockMachine();
+          slotCommand(LOCK,4,"Game Locked");
           vfd.clear();
           showMessageOnVFD("TOURNAMENT OVER", 0);
           showMessageOnVFD("PLEASE WAIT", 1);
@@ -516,7 +513,9 @@ void showAvailComps()
   char b[20];
   int creds = 0;
   
-  if (readGameData()) creds = playerComps + ((totalIn - tempTotalIn) * compPercentage);
+  if (haveStartingStats && readGameData()) {
+    creds = playerComps + abs((totalIn - tempTotalIn) * compPercentage);
+  }
   else creds = playerComps;
 
   stringData = String(creds) + " credits";
@@ -532,7 +531,7 @@ void useCompCredits()
 {
   int creds = 0;
   
-  if (readGameData()) playerComps += ((totalIn - tempTotalIn) * compPercentage);
+  if (haveStartingStats && readGameData()) playerComps += abs((totalIn - tempTotalIn) * compPercentage);
   creds = playerComps;
     
   if (creds <1){
@@ -655,9 +654,9 @@ bool startTournamentMode(String credits)
   waitingForStart=true;
   addCredits(credits);
   delay(1000);
-  disableBV();
+  slotCommand(DBILL,4,"BV Disabled");
   delay(500);
-  lockMachine();
+  slotCommand(LOCK,4,"Game Locked");
   tournamentScore = 0; 
     
   Serial.println(F("Tournament Started"));
@@ -676,7 +675,7 @@ void exitTournamentMode()
   totalWon = pollMeters(mTotWon);
   if (totalWon>0) tournamentScore = totalWon - winMeterStart;
           
-  enableBV();
+  slotCommand(EBILL,4,"BV Enabled");
   inTournament=false;
   waitingForStart=false;
   startTime=0;
@@ -1158,7 +1157,7 @@ bool checkForPlayerCard()
         {
           Serial.println(F("Card removed while in Tournament Play. Player is no longer in game."));
           showMessageOnVFD("WAIT FOR HOST", 0);
-          lockMachine();
+          slotCommand(LOCK,4,"Game Locked");
         }
         
         // Clear variables
@@ -1188,7 +1187,7 @@ void updatePlayerStats()
       playerGamesWon += (gamesWon - tempGamesWon);
       playerGamesLost += (gamesLost - tempGamesLost);
       playerTotalWon += (totalWon - tempTotalWon);
-      playerComps += ((totalIn - tempTotalIn) * compPercentage);
+      playerComps += abs((totalIn - tempTotalIn) * compPercentage);
   
       // Update temp values
       tempTotalIn = totalIn;
@@ -1698,12 +1697,12 @@ void htmlPoll()
         reqResult = writePlayerDataToSD(cid, getValue(playerData, '|', 1).toInt(), urlDecode(getValue(playerData, '|', 0)), getValue(playerData, '|', 2).toInt(), getValue(playerData, '|', 3).toInt(), getValue(playerData, '|', 4).toInt(), getValue(playerData, '|', 5).toInt(), getValue(playerData, '|', 6).toInt());
       }
 
-      if (command == "mo") reqResult=mute();
-      if (command == "mt") reqResult=unMute();
-      if (command == "lk") reqResult=lockMachine();
-      if (command == "uk") reqResult=unlockMachine();
-      if (command == "eb") reqResult=enableBV();
-      if (command == "db") reqResult=disableBV();
+      if (command == "mo") reqResult=slotCommand(MUTE,4,"Sound Off");
+      if (command == "mt") reqResult=slotCommand(UMUTE,4,"Sound On");
+      if (command == "lk") reqResult=slotCommand(LOCK,4,"Game Locked");
+      if (command == "uk") reqResult=slotCommand(ULOCK,4,"Game Unlocked");
+      if (command == "eb") reqResult=slotCommand(EBILL,4,"BV Enabled");
+      if (command == "db") reqResult=slotCommand(DBILL,4,"BV Disabled");
       if (command == "rh") reqResult=resetHandpay();
       if (command == "ec") reqResult=changeButtonToCredits(true);
       if (command == "dc") reqResult=changeButtonToCredits(false);
@@ -1764,7 +1763,7 @@ void htmlPoll()
         String customMsg = "                    " + getValue(getValue(urlDecode(querystring), '&', 1), '=', 1);
         customMsg.toCharArray(scrollBuffer, customMsg.length() + 1);
         reqResult=setupPlayerMessage(true);
-        reqResult = unlockMachine();
+        reqResult = slotCommand(ULOCK,4,"Game Unlocked");
       }
 
       if (command == "st")  // Start Tournament Mode
@@ -1827,8 +1826,8 @@ void htmlPoll()
       if (sdFile)
       {
         client.print(htmlHeader);
-        client.print(F("<head><meta name='viewport' content='initial-scale=1.0'>"));
-        client.print(F("<style>body {font-family: Tahoma;} button {font-family: inherit; font-size: 1.0em; background-color: #008CBA; color: white; border: none; text-decoration: none; border-radius: 4px; transition-duration: 0.4s;} button:hover { background-color: white; color: black; border: 2px solid #008CBA; } td { padding-left: 7.5px; padding-right: 7.5px; } </style></head><body>"));
+        client.print(F("<head><meta name='viewport' content='initial-scale=1.0'><title>Arduino TITO and Player Tracking</title>"));
+        client.print(F("<style>body {font-family: Tahoma;} button {font-family: inherit; font-size: 1.0em; background-color: #008CBA; color: white; border: none; text-decoration: none; border-radius: 4px; transition-duration: 0.4s;} button:hover { background-color: white; color: black; border: 2px solid #008CBA; } td { margin-left: 7.5px; margin-right: 7.5px; } </style></head><body>"));
         client.print(F("<div style='max-width: 100%; margin: auto; text-align:center;'>"));
         client.print(F("<h2>Arduino TITO and Player Tracking</h2>"));
         client.print("Game Name: <b>" + gameName + "</b>&nbsp;&nbsp;&nbsp;");
@@ -1885,46 +1884,84 @@ void htmlPoll()
 
 void generalPoll()
 {
-  SASEvent[0] = 0x00;
+  byte eventCode = 0;
 
-  UCSR1B = 0b10011101;
-  Serial1.write(0x80);
+  UCSR0B = 0b10011101;
+  Serial.write(0x80);
   delay(20);
-  Serial1.write(0x81);
-  UCSR1B = 0b10011100;
+  Serial.write(0x81);
+  UCSR0B = 0b10011100;
 
-  delay(10);  // Found to be necessary on some machines to wait for data on the serial bus
-  if (Serial1.available() > 0) {
-    Serial1.readBytes(SASEvent, sizeof(SASEvent));
-    if (sasOnline==false) sasOnline=true;
+  delay(10);  // Wait for data on the serial bus
+  if (Serial.available() > 0) {
+    eventCode = Serial.read();
+     if (sasOnline==false) sasOnline=true;
   }
 
-  if (SASEvent[0] != 0x1F && SASEvent[0] != 0x00 && SASEvent[0] != 0x01 && SASEvent[0] != 0x80 && SASEvent[0] != 0x81 && SASEvent[0] != 0x7C) {
-    Serial.print(F("SAS Event Received: ")); Serial.print(SASEvent[0], HEX); Serial.print(F(" "));
+  if (eventCode != 0x1F && eventCode != 0x00 && eventCode != 0x01 && eventCode != 0x80 && eventCode != 0x81 && eventCode != 0x7C) {
+    Serial.print(F("SAS Event Received: ")); Serial.print(eventCode, HEX); Serial.print(F(" "));
 
-    if (SASEvent[0] == 0x11) Serial.println(F("Game door opened"));
-    if (SASEvent[0] == 0x12) Serial.println(F("Game door closed"));
-    if (SASEvent[0] == 0x17) Serial.println(F("AC power was applied to gaming machine"));
-    if (SASEvent[0] == 0x18) Serial.println(F("AC power was lost from gaming machine"));
-    if (SASEvent[0] == 0x19) Serial.println(F("Cashbox door was opened"));
-    if (SASEvent[0] == 0x1A) Serial.println(F("Cashbox door was closed"));        
-    if (SASEvent[0] == 0x66) Serial.println(F("Cash out button pressed"));
-    if (SASEvent[0] == 0x51) Serial.println(F("Handpay is pending"));
-    if (SASEvent[0] == 0x52) Serial.println(F("Handpay was reset"));
-    if (SASEvent[0] == 0x2B) Serial.println(F("Bill rejected"));
-    if (SASEvent[0] == 0x7E) Serial.println(F("Game started"));
-    if (SASEvent[0] == 0x7F) Serial.println(F("Game ended"));
-
-    // Process/log these events
-    if (SASEvent[0] == 0x71 & changeToCredits) addCredits(changeCredits); // To enable 'Change button' credits
-    if (SASEvent[0] == 0x72 & changeToCredits) addCredits(changeCredits); // To enable 'Change button' credits
-    if (SASEvent[0] == 0x51) getHandpayInfo();
-    if (SASEvent[0] == 0x57) SystemValidation();
-    if (SASEvent[0] == 0x3D) CashOutState();
-    if (SASEvent[0] == 0x67) RedeemTicket();
-    if (SASEvent[0] == 0x68) ConfirmRedeem();
+    switch (eventCode) {
+      case 0x11:
+        Serial.println(F("Game door opened"));
+        break;
+      case 0x12:
+        Serial.println(F("Game door closed"));
+        break;
+      case 0x17:
+        Serial.println(F("AC power was applied to gaming machine"));
+        break;
+      case 0x18:
+        Serial.println(F("AC power was lost from gaming machine"));
+        break;
+      case 0x19:
+        Serial.println(F("Cashbox door was opened"));
+        break;
+      case 0x1A:
+        Serial.println(F("Cashbox door was closed"));
+        break;
+      case 0x66:
+        Serial.println(F("Cash out button pressed"));
+        break;
+      case 0x51:
+        Serial.println(F("Handpay is pending"));
+        getHandpayInfo();
+        break;
+      case 0x52:
+        Serial.println(F("Handpay was reset"));
+        break;
+      case 0x2B:
+        Serial.println(F("Bill rejected"));
+        break;
+      case 0x7E:
+        Serial.println(F("Game started"));
+        break;
+      case 0x7F:
+        Serial.println(F("Game ended"));
+        break;
+      case 0x71:
+      case 0x72:
+        if (changeToCredits) {
+          addCredits(changeCredits);  // To enable 'Change button' credits
+        }
+        break;
+      case 0x57:
+        SystemValidation();
+        break;
+      case 0x3D:
+        CashOutState();
+        break;
+      case 0x67:
+        RedeemTicket();
+        break;
+      case 0x68:
+        ConfirmRedeem();
+        break;
+      default:
+        break;
+    }
     Serial.println(F(""));
-  } 
+  }
 }
 
 int dec2bcd(byte val)
@@ -2004,45 +2041,10 @@ long pollMeters(byte * meter)
   return sMeter.toInt();
 }
 
-bool lockMachine()
+bool slotCommand(byte cmd[], int len, const char msg[])
 {
-  SendTypeS(LOCK, sizeof(LOCK));
-  isLocked=true;
-  return waitForACK(SASAdr,"Game Locked");
-}
-
-bool unlockMachine()
-{
-  SendTypeS(ULOCK, sizeof(LOCK));
-  isLocked=false;
-  if (cardType == 1) setupPlayerMessage(false);
-  else setupAttractMessage();
-  
-  return waitForACK(SASAdr,"Game Unlocked");
-}
-
-bool mute()
-{
-  SendTypeS(MUTE, sizeof(MUTE));
-  return waitForACK(SASAdr,"Sound Off");
-}
-
-bool unMute()
-{
-  SendTypeS(UMUTE, sizeof(UMUTE));
-  return waitForACK(SASAdr,"Sound On");
-}
-
-bool disableBV()
-{
-  SendTypeS(DBILL, sizeof(DBILL));
-  return waitForACK(SASAdr,"BV Disabled");
-}
-
-bool enableBV()
-{
-  SendTypeS(EBILL, sizeof(EBILL));
-  return waitForACK(SASAdr,"BV Enabled");
+  SendTypeS(cmd, len);
+  return waitForACK(SASAdr, msg);
 }
 
 bool changeButtonToCredits(bool e)
