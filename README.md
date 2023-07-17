@@ -16,7 +16,6 @@ By Marc Davis (07/17/2023)
   There are also a lot of configuration steps with this hardware which make it unfriendly for the un-initiated. 
 
 
-
   Arduino TITO Deluxe – Build 20230706
 
   The Deluxe board is based on the Arduino Uno; which only has 2K of usable RAM for variables. The previous versions were not entirely stable due to the memory requirements of the Ethernet and SD libraries. The lack of 
