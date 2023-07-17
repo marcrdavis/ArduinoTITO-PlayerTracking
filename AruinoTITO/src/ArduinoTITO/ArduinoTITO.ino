@@ -1,5 +1,5 @@
 /*
-  Arduino TITO v2.0.20230325T
+  Arduino TITO v2.0.20230706T
   by Marc R. Davis - Copyright (c) 2020-2023 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
@@ -40,12 +40,9 @@ char* changeCredits = "500"; // UPDATE BEFORE COMPILING - Set the number of cred
 byte SASAdr = 0x01;
 byte CRCH = 0x00;
 byte CRCL = 0x00;
-byte SASEvent [1];
-byte returnStatus[1];
 
 byte SVNS[2] = {SASAdr, 0x57};
 byte TP[2] = {SASAdr, 0x70};
-byte HPI[2] = {SASAdr, 0x1B};
 byte EVInfo[5] = {SASAdr, 0x4D, 0x00, 0x00, 0x00};
 byte transComplete[6] = {SASAdr, 0x71, 0x01, 0xFF, 0x1F, 0xD0};
 
@@ -123,7 +120,7 @@ bool addCredits(String credits)
 
 void generalPoll()
 {
-  SASEvent[0] = 0x00;
+  byte eventCode = 0;
 
   UCSR0B = 0b10011101;
   Serial.write(0x80);
@@ -131,19 +128,31 @@ void generalPoll()
   Serial.write(0x81);
   UCSR0B = 0b10011100;
 
-  delay(10);  // Found to be necessary on some machines to wait for data on the serial bus
-  if (Serial.available() > 0) Serial.readBytes(SASEvent, sizeof(SASEvent));
+  delay(10);  // Wait for data on the serial bus
+  if (Serial.available() > 0) {
+    eventCode = Serial.read();
+  }
 
-  if (SASEvent[0] != 0x1F && SASEvent[0] != 0x00 && SASEvent[0] != 0x01 && SASEvent[0] != 0x80 && SASEvent[0] != 0x81 && SASEvent[0] != 0x7C) {
-
-    // Process/log these events
-    if (SASEvent[0] == 0x71 & changeToCredits) addCredits(changeCredits); // To enable 'Change button' credits
-    if (SASEvent[0] == 0x72 & changeToCredits) addCredits(changeCredits); // To enable 'Change button' credits
-    if (SASEvent[0] == 0x57) SystemValidation();
-    if (SASEvent[0] == 0x3D) CashOutState();
-    if (SASEvent[0] == 0x67) RedeemTicket();
-    if (SASEvent[0] == 0x68) ConfirmRedeem();
-  } 
+  switch (eventCode) {
+    case 0x71:
+    case 0x72:
+      if (changeToCredits) {
+        addCredits(changeCredits);  // To enable 'Change button' credits
+      }
+      break;
+    case 0x57:
+      SystemValidation();
+      break;
+    case 0x3D:
+      CashOutState();
+      break;
+    case 0x67:
+      RedeemTicket();
+      break;
+    case 0x68:
+      ConfirmRedeem();
+      break;
+  }
 }
 
 int dec2bcd(byte val)

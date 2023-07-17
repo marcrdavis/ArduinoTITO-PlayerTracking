@@ -1,0 +1,66 @@
+<head><meta name='viewport' content='initial-scale=1.0'><title>Arduino TITO Deluxe</title>
+<style>body {font-family: Tahoma;} button {height: 50px; font-family: inherit; font-size: 1.0em; background-color: #008CBA; color: white; border: none; text-decoration: none; border-radius: 4px; 
+transition-duration: 0.4s;} button:hover { background-color: white; color: black; border: 2px solid #008CBA; } td { marginleft: 7.5px; marginright: 7.5px; } </style></head><body>
+<div style='max-width: 100%; margin: auto; text-align:center;'>
+<h2>Arduino TITO Deluxe</h2>
+<div style="max-width: 100%; margin: auto;"> <IFRAME id="iframe" style="display:none" name="hidden-form"></IFRAME> <hr /> 
+
+<FORM method="get" target="hidden-form">
+<div><input id="ipAddress" name="ipAddress" style="width:100%; height:50px" placeholder="IP address of game to manage" value="" onchange="changeFormActions()"></div><br>
+</FORM>
+
+<table style="width: 100%; table-layout: auto;">
+
+<tr> <td> <FORM method="get" action="" target="hidden-form"><button type="submit" style="width:100%; height:50px" name="credits" value="">Add Credits</button> </td> <td> 
+<input name="cr" style="width:100%; height:50px; margin-bottom: 15px" value="1000" size="6"> </td> </tr> </FORM> <tr> <td> 
+<FORM method="get" target="hidden-form"> <button type="submit" style="width:100%; height:50px" name="mt" value="">Sound On</button> </FORM> </td> <td> 
+<FORM method="get" target="hidden-form"> <button type="submit" style="width:100%; height:50px" name="mo" value="">Sound Off</button> </FORM> </td> </tr> <tr> <td> 
+<FORM method="get" target="hidden-form"> <button type="submit" style="width:100%; height:50px" name="uk" value="">Unlock Play</button> </FORM> </td> <td> 
+<FORM method="get" target="hidden-form"> <button type="submit" style="width:100%; height:50px" name="lk" value="">Lock Play</button> </FORM> </td> </tr> <tr> <td> 
+<FORM method="get" target="hidden-form"> <button type="submit" style="width:100%; height:50px" name="eb" value="">Enable Bill Validator</button> </FORM> </td> <td> 
+<FORM method="get" target="hidden-form"> <button type="submit" style="width:100%; height:50px" name="db" value="">Disable Bill Validator</button> </FORM> </td> </tr> <tr> <td> 
+<FORM method="get" target="hidden-form"> <button type="submit" style="width:100%; height:50px" name="ec" value="">Change/Credits On</button> </FORM> </td> <td> 
+<FORM method="get" target="hidden-form"> <button type="submit" style="width:100%; height:50px" name="dc" value="">Change/Credits Off</button> </FORM> </td> </tr> <tr> <td> 
+<FORM method="get"> <button type="submit" style="width:100%; height:50px" name="ds" value="">Game Statistics</button> </FORM> </td> <td>
+<FORM method="get" target="hidden-form"> <button type="submit" style="width:100%; height:50px" name="rb" value="">Reboot Arduino</button> </FORM> </td> <td> 
+<tr> <td colspan="2">&nbsp;</td> </tr> <tr> <td colspan="2"><fieldset><legend>Update Ticket Info</legend>
+<FORM method="get" target="hidden-form"> 
+<div><input name="ud1" style="width:100%; height:50px" placeholder="Casino Name/Location" value=""></div><br>
+<div><input name="ud2" style="width:100%; height:50px" placeholder="Address Line 1" value=""></div><br>
+<div><input name="ud3" style="width:100%; height:50px" placeholder="Address Line 2" value=""></div><br>
+<div><button type="submit" style="width:100%; height:50px;" name="ud" value="">Update Ticket Info</button><div>
+</FORM> </fieldset></td> </tr> <tr> <td colspan="2">&nbsp<td> </tr></table> <hr />
+Copyright (c) 2023 - The Arduino TITO and Player Tracking Project
+</div>
+
+<script>
+
+function getParameterByName(name, url = window.location.href) {
+    name = name.replace(/[\[\]]/g, '\\$&');
+    var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+        results = regex.exec(url);
+    if (!results) return null;
+    if (!results[2]) return '';
+    return decodeURIComponent(results[2].replace(/\+/g, ' '));
+}
+
+function changeFormActions() {
+  var ipAddressElement = document.getElementById('ipAddress');
+
+  if (ipAddressElement) {
+    var ipAddress = ipAddressElement.value;
+    var forms = document.getElementsByTagName('form');
+
+    for (var i = 0; i < forms.length; i++) {
+      forms[i].action = "http://" + ipAddress;
+    }
+  }
+}
+
+// Read address from querystring if present and populate field
+var ip = getParameterByName("ip");
+if (ip) document.getElementById('ipAddress').value=ip;
+changeFormActions();
+
+</script>
+ 

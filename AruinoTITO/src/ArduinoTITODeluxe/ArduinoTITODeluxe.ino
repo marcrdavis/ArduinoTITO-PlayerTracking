@@ -1,5 +1,5 @@
 /*
-  Arduino TITO Deluxe v2.0.20230328D
+  Arduino TITO Deluxe v2.0.20230706D
   by Marc R. Davis - Copyright (c) 2020-2023 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
@@ -8,6 +8,8 @@
 
   Hardware requirements: 
     Arduino Uno; W5100 Ethernet Shield; Serial Port
+
+    ** WARNING: Do not insert an SD card; it will cause problems with the network **
 
   For TITO setup please follow the included documentation
 
@@ -32,23 +34,21 @@
 // Required Libraries
 // ------------------------------------------------------------------------------------------------------------
 
-#include <IniFile.h>
-#include <SPI.h>
-#include <SD.h>
-#include <Ethernet.h>  // Must use version 1.0.4 due to memory issues
+#include <Ethernet.h>
 
 // ------------------------------------------------------------------------------------------------------------
 // Core Variables
 // ------------------------------------------------------------------------------------------------------------
 
-bool changeToCredits = 0; // Set to 1 to enable Change to Credits - set in code or read from config.txt
-bool useDHCP = 1; // Set to 1 to enable DHCP - set in code or read from config.txt
+bool changeToCredits = 0; // Set to 1 to enable Change to Credits
+bool useDHCP = 0; // Set to 1 to enable DHCP
 bool sasError = false;
 
-char* changeCredits = "500"; // Credits to add - set in code or read from config.txt
+char* changeCredits = "500"; // Credits to add 
+char* webUI = "http://arduinotito.infinityfreeapp.com/?ip="; // The url of the site hosting the webUI; change if you want to host it locally; must append /?ip= to url
 
-byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }; // UPDATE BEFORE COMPILING - Change to unique address for each board 
-IPAddress ip(192, 168, 1, 254); // Your default IP address - set in code or read from config.txt
+byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }; // UPDATE BEFORE COMPILING IF YOU HAVE MULTIPLE MACHINES - Change to unique address for each board 
+IPAddress ip(192, 168, 1, 254); // Your default IP address - change if your network addressing is different or if you have multiple machines
 
 // ------------------------------------------------------------------------------------------------------------
 // SAS Protocol Variables
@@ -57,12 +57,9 @@ IPAddress ip(192, 168, 1, 254); // Your default IP address - set in code or read
 byte SASAdr = 0x01;
 byte CRCH = 0x00;
 byte CRCL = 0x00;
-byte SASEvent [1];
-byte returnStatus[1];
 
 byte SVNS[2] = {SASAdr, 0x57};
 byte TP[2] = {SASAdr, 0x70};
-byte HPI[2] = {SASAdr, 0x1B};
 byte LOCK[4] = {SASAdr, 0x01, 0x00, 0x00};
 byte ULOCK[4] = {SASAdr, 0x02, 0x00, 0x00};
 byte MUTE[4] = {SASAdr, 0x03, 0x00, 0x00};
@@ -92,8 +89,13 @@ byte TIM [11];
 // Setup instances
 // ------------------------------------------------------------------------------------------------------------
 
-File sdFile;
 EthernetServer server(80);
+
+// ------------------------------------------------------------------------------------------------------------
+// Reset function
+// ------------------------------------------------------------------------------------------------------------
+
+void(* resetFunc) (void) = 0;
 
 // ------------------------------------------------------------------------------------------------------------
 // Setup - called once during init
@@ -106,13 +108,6 @@ void setup()
   Serial.setTimeout(200);
   pinMode(LED_BUILTIN, OUTPUT);
 
-  // Setup SD Card
-  SPI.begin();
-  initSDCard();
-
-  // Read the config file
-  readConfig();
- 
   // Initialize Ethernet
   initEthernet();
 
@@ -143,48 +138,6 @@ void loop()
 }
 
 // ------------------------------------------------------------------------------------------------------------
-// IO Functions
-// ------------------------------------------------------------------------------------------------------------
-
-// Initialize the SD card
-
-void initSDCard()
-{
-  if (!SD.begin(4))
-  {
-    Serial.println(F("SD Init Failed"));
-    while (1);
-  }
-}
-
-// Read the configuration from SD card
-
-void readConfig()
-{
-  char buffer[40];
-  IniFile ini("config.txt");
-
-  if (!ini.open())
-  {
-    Serial.println(F("Config file is missing!"));
-    return;
-  }
-
-  if (ini.getValue(NULL, "changeToCredits", buffer, 40)) changeToCredits = atoi(buffer);
-  if (ini.getValue(NULL, "useDHCP", buffer, 40)) useDHCP = atoi(buffer);
-  if (ini.getValue(NULL, "changeCredits", buffer, 40)) strcpy(changeCredits, buffer);
-
-  if (ini.getValue(NULL, "ipAddress", buffer, 40))
-  {
-    char ipAddress[15];
-    strcpy(ipAddress, buffer);
-    ip.fromString((ipAddress));
-  }
-
-  ini.close();
-}
-
-// ------------------------------------------------------------------------------------------------------------
 // Network Functions
 // ------------------------------------------------------------------------------------------------------------
 
@@ -198,6 +151,7 @@ void initEthernet()
   else Ethernet.begin(mac, ip);
   
   ip = Ethernet.localIP();
+  Serial.println(ip);
   delay(1000);
 }
 
@@ -210,6 +164,8 @@ void initEthernet()
 bool addCredits(String credits)
 {
   String paddedValue = "";
+  paddedValue.reserve(8);
+
   byte ac[4];
   credits.trim();
   for (int i = 0; i < 8 - credits.length(); i++) paddedValue += "0";
@@ -232,24 +188,87 @@ bool addCredits(String credits)
 
 // Get a value in a string of data split by a separator character
 
-char* getParamValue(char* querystring, const char* param, int offset) 
-{
-  char* ptr = strstr(querystring, param); // Find the parameter in the querystring
-  if (ptr != NULL) {
-    ptr += strlen(param)+1+offset; // Move pointer to the value of the parameter
-    char* endptr = strchr(ptr, '&'); // Find the end of the value (either the next parameter or end of the string)
-    if (endptr == NULL) endptr = strchr(ptr, ' '); // find the end of the value (space)
-    if (endptr != NULL) {
-      size_t length = endptr - ptr; // Calculate the length of the value
-      char* value = (char*) malloc(length + 1); // Allocate memory for the value
-      strncpy(value, ptr, length); // Copy the value to the allocated memory
-      value[length] = '\0'; // Null-terminate the string
-      return value;
-    } else { // If no next parameter found, the value extends to the end of the string
-      return ptr;
+String getQueryValue(const char* queryString, const char* key) {
+  const char* delimiter = "&";
+  const char* valueDelimiter = "=";
+
+  char queryStringCopy[strlen(queryString) + 1];
+  strcpy(queryStringCopy, queryString);
+
+  char* pair = strtok(queryStringCopy, delimiter);
+
+  while (pair != NULL) {
+    char* keyValueSeparator = strstr(pair, valueDelimiter);
+
+    if (keyValueSeparator != NULL) {
+      char* currentKey = pair;
+      size_t keyLength = keyValueSeparator - pair;
+
+      if ((keyLength == strlen(key) && strncmp(currentKey, key, keyLength) == 0) ||
+          (keyLength == strlen(key) - 1 && strncmp(currentKey, key, keyLength) == 0 && currentKey[keyLength] == '=')) {
+        char* value = keyValueSeparator + strlen(valueDelimiter);
+
+        // Find the first occurrence of a blank space
+        char* spacePosition = strchr(value, ' ');
+        if (spacePosition != NULL) {
+          *spacePosition = '\0';  // Set the blank space to null terminator
+        }
+
+        return String(value);
+      }
     }
+
+    pair = strtok(NULL, delimiter);
   }
-  return NULL; // Parameter not found in the querystring
+
+  return String();  // Return an empty string if key not found
+}
+
+
+// Used by urlDecode
+
+unsigned char h2int(char c)
+{
+  if (c >= '0' && c <= '9') {
+    return ((unsigned char)c - '0');
+  }
+  if (c >= 'a' && c <= 'f') {
+    return ((unsigned char)c - 'a' + 10);
+  }
+  if (c >= 'A' && c <= 'F') {
+    return ((unsigned char)c - 'A' + 10);
+  }
+  return (0);
+}
+
+// Decode querystring parameters
+
+String urlDecode(String str)
+{
+  String decodedString = "";
+  char c;
+  char code0;
+  char code1;
+  for (int i = 0; i < str.length(); i++) {
+    c = str.charAt(i);
+    if (c == '+') {
+      decodedString += ' ';
+    } else if (c == '%') {
+      i++;
+      code0 = str.charAt(i);
+      i++;
+      code1 = str.charAt(i);
+      c = (h2int(code0) << 4) | h2int(code1);
+      decodedString += c;
+    } else {
+
+      decodedString += c;
+    }
+
+    yield();
+  }
+
+  return decodedString;
 }
 
 // ------------------------------------------------------------------------------------------------------------
@@ -262,22 +281,22 @@ void htmlPoll()
   
   EthernetClient client = server.available();
   if (!client) return;
-  
+
   if (client.connected()) // If client is present and connected
   {
     bool reqResult = false;
-    char stringData[150];  // Anything greater and the app becomes unstable
+    char stringData[130];  // Anything greater and the app becomes unstable
     memset(stringData, 0, sizeof(stringData));
     
-    int size = client.readBytesUntil('\n', stringData, 150); // Get the first line of request
+    int size = client.readBytesUntil('\n', stringData, sizeof(stringData)); // Get the first line of request
     while (client.available()) client.read(); // Get the rest of the header and discard
    
     // Parse querystring
-
+    
     if (strstr(stringData,"ds=")) // Game Statistics
     {
-      client.print(F("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n"));
-      client.print(F("<html>\r\n<head></head><body><h2>GAME STATISTICS</h2><br>"));
+      client.print(F("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n<html>\r\n"));
+      client.print(F("<head></head><body><h2>GAME STATISTICS</h2><br>"));
       client.print(F("Credits<br>"));
       client.print(pollMeters(mCredits));
       client.print(F("<br>Total In<br>"));
@@ -287,17 +306,18 @@ void htmlPoll()
       client.print(F("<br>Total Games<br>"));
       client.print(pollMeters(mTotGames));
       client.print(F("<br>Games Won<br>"));
-      client.print( pollMeters(mgamesWon));
+      client.print(pollMeters(mgamesWon));
       client.print(F("<br>Games Lost<br>"));
       client.print(pollMeters(mgamesLost));
-      client.print(F("<br></body></html>\r\n\r\n"));      
-
+      client.print(F("<br>"));      
+      client.print(F("</body>"));
+      client.print(F("</html>\r\n\r\n"));
       client.stop();
       return;
     }
 
     // All of the remaining commands return a single status or a result code
-    
+
     if (strstr(stringData,"mo=")) reqResult=slotCommand(MUTE,4);
     if (strstr(stringData,"mt=")) reqResult=slotCommand(UMUTE,4);
     if (strstr(stringData,"lk=")) reqResult=slotCommand(LOCK,4);
@@ -306,41 +326,41 @@ void htmlPoll()
     if (strstr(stringData,"db=")) reqResult=slotCommand(DBILL,4);
     if (strstr(stringData,"ec=")) changeToCredits=1;
     if (strstr(stringData,"dc=")) changeToCredits=0;
+
+    if (strstr(stringData,"rb=")) // Reboot Arduino
+    {
+      client.print(F("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n<!DOCTYPE HTML>\r\n<html><head><meta http-equiv='Refresh' content='8; url=\""));
+      client.print(webUI);
+      client.print(ip);
+      client.println(F("\"' /></head></html>"));
+      client.print(F("Rebooting..."));
+      client.stop();
+      resetFunc();
+      return;
+    }
     
     if (strstr(stringData,"ud=")) // Update Ticket Data
     {
-      char* location = getParamValue(stringData, "ud1",0);
-      char* address1 = getParamValue(stringData, "ud2",0);
-      char* address2 = getParamValue(stringData, "ud3",0);
+      memmove(stringData, stringData + 6, size - 6 + 1);  // +1 to include the null terminator
+      String location = urlDecode(getQueryValue(stringData,"ud1"));      
+      String address1 = urlDecode(getQueryValue(stringData,"ud2"));    
+      String address2 = urlDecode(getQueryValue(stringData,"ud3"));    
       reqResult=SetTicketData(location, address1, address2);
     }
    
     if (strstr(stringData,"cr=")) // Add Credits to game
     {
-      char* credits = getParamValue(stringData, "cr",4);
+      String credits = getQueryValue(stringData,"cr");
       reqResult=addCredits(credits);
     }
 
     if (strstr(stringData, "GET / HTTP/1.1"))
     {
       // Show web interface
-      sdFile = SD.open("index.htm", FILE_READ);
-      if (sdFile)
-      {
-        client.print(F("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n"));
-      
-        while (sdFile.available()) {
-          client.write(sdFile.read());
-        }
-        client.print(F("</html>\r\n\r\n"));
-        sdFile.close();
-      }
-      else
-      {
-        // UI Not available (SD Card error?)
-        client.print(F("HTTP/1.1 503 Service not available\r\n\r\n"));
-      }
-
+      client.print(F("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n<!DOCTYPE HTML>\r\n<html><head><meta http-equiv='Refresh' content='0; url=\""));
+      client.print(webUI);
+      client.print(ip);
+      client.println(F("\"' /></head></html>"));
     }
     else
     {        
@@ -366,7 +386,7 @@ void htmlPoll()
 
 void generalPoll()
 {
-  SASEvent[0] = 0x00;
+  byte eventCode = 0;
 
   UCSR0B = 0b10011101;
   Serial.write(0x80);
@@ -374,19 +394,31 @@ void generalPoll()
   Serial.write(0x81);
   UCSR0B = 0b10011100;
 
-  delay(10);  // Found to be necessary on some machines to wait for data on the serial bus
-  if (Serial.available() > 0) Serial.readBytes(SASEvent, sizeof(SASEvent));
+  delay(10);  // Wait for data on the serial bus
+  if (Serial.available() > 0) {
+    eventCode = Serial.read();
+  }
 
-  if (SASEvent[0] != 0x1F && SASEvent[0] != 0x00 && SASEvent[0] != 0x01 && SASEvent[0] != 0x80 && SASEvent[0] != 0x81 && SASEvent[0] != 0x7C) {
-
-    // Process/log these events
-    if (SASEvent[0] == 0x71 & changeToCredits) addCredits(changeCredits); // To enable 'Change button' credits
-    if (SASEvent[0] == 0x72 & changeToCredits) addCredits(changeCredits); // To enable 'Change button' credits
-    if (SASEvent[0] == 0x57) SystemValidation();
-    if (SASEvent[0] == 0x3D) CashOutState();
-    if (SASEvent[0] == 0x67) RedeemTicket();
-    if (SASEvent[0] == 0x68) ConfirmRedeem();
-  } 
+  switch (eventCode) {
+    case 0x71:
+    case 0x72:
+      if (changeToCredits) {
+        addCredits(changeCredits);  // To enable 'Change button' credits
+      }
+      break;
+    case 0x57:
+      SystemValidation();
+      break;
+    case 0x3D:
+      CashOutState();
+      break;
+    case 0x67:
+      RedeemTicket();
+      break;
+    case 0x68:
+      ConfirmRedeem();
+      break;
+  }
 }
 
 int dec2bcd(byte val)
