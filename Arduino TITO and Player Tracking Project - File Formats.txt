@@ -1,4 +1,4 @@
-Arduino TITO and Player Tracking Project (V2.0.20221023)
+Arduino TITO and Player Tracking Project (V2.0.20230706)
 Marc R. Davis
 
 PLAYER AND CONFIG FILE FORMATS
@@ -17,8 +17,8 @@ changeToCredits=0  	<- Set to 1 to enable pressing the Change/Service button to 
 changeCredits=200  	<- Number of credits to add to machine when changeToCredits option is enabled
 adminPin=1234  		<- Used to secure admin mode
 compPercentage=0.01  	<- Used to determine comp payback; Set to zero to disable comps
-wifiSSID= 		<- NEW in 2.0.20221023! Used in the Wifi/ESP8266 compatible sketch
-wifiPassword= 		<- NEW in 2.0.20221023! Used in the Wifi/ESP8266 compatible sketch
+wifiSSID= 		<- Used in the Wifi/ESP8266 compatible sketch only
+wifiPassword= 		<- Used in the Wifi/ESP8266 compatible sketch only
 useDHCP=1  		<- Set to 1 to use DHCP to get IP Address from network; Set to 0 to manually enter an IP Address
 ipAddress=  		<- Manual IP Address if useDHCP is set to 0
 serverIPAddress=  	<- IP Address of server/machine hosting the card data; Do not set this to be itself
