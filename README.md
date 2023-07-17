@@ -1,6 +1,6 @@
 # Arduino TITO and Player Tracking
 A homebrew slot machine TITO, player tracking and display project
-By Marc Davis (03/28/2023)
+By Marc Davis (07/17/2023)
 
   Project goals: To allow home slot machine owners the ability to add Ticket In/Ticket Out (TITO), 
   Remote Control, Monitoring and Player Tracking (Display/Keypad/Reader) to their SAS-Compatible 
@@ -14,6 +14,40 @@ By Marc Davis (03/28/2023)
   or you can use any compatible ESP8266 module. I am currently testing a Wifi version of the Deluxe sketch with the
   Robotdyn Uno WiFi R3 - however the code is not stable yet and may never be due to the overhead of the WifiAT library. 
   There are also a lot of configuration steps with this hardware which make it unfriendly for the un-initiated. 
+
+  Arduino TITO Deluxe – Build 20230706
+
+  The Deluxe board is based on the Arduino Uno; which only has 2K of usable RAM for variables. The previous versions were not entirely stable due to the memory requirements of the Ethernet and SD libraries. The lack of 
+  garbage collection meant that repeated use of some variables would eventually deplete the available RAM and make the app crash. To fix this I have made the following changes to the project:
+
+  This version removes the use of the SD card; the few required configuration variables can be set in the sketch prior to loading it onto the Uno for the first time. These variables would rarely need to be changed and 
+  some can be altered during game-play by using the webUI
+
+  With the removal of the SD library we were able to remove the SPI and iniFile libraries – freeing up considerable space
+
+  IMPORTANT: You must remove the SD card from the device before use; with a card inserted the network will not start
+
+  Since the SD card is no longer present the web interface has been moved from the device to a hosted site. This was done for several reasons:
+
+      o	Performance
+      o	Memory limitations of the Uno hardware 
+      o	The need to free up code space for additional features
+
+  Even though the web interface is hosted on the Internet it does not have access to your network. You can only manage machines on the same local network as the device you are connecting from. If you are still not 
+  comfortable with that for any reason you can host the webpage yourself on a web server on your network – then simply change the ‘webUI’ property in the code to point to your server. The only file needed is the 
+  index.html file, which is included in the package.
+
+  To access the web interface you can either browse to the IP Address of your game or go to http://arduinotito.infinityfreeapp.com and enter the IP Address of the game in the space provided.
+
+  -	The code has been completely refactored and valuable memory-saving space has been recovered
+  -	You can now use the latest version of the Ethernet library; this has dramatically improved the reliability of the web server. (if you were using version 1.0.4 previously please upgrade your library)
+  - This version fixes an issue where the ticket info text was not being url-decoded before being sent to the game
+  -	This version adds the option to remotely reboot the Arduino from the webUI
+
+  Build 20230706 Updates
+
+  - Updates to the MEGA Sketches
+  - Updated SAS protocol implementation based on work done to optimize it for the Arduino Uno
 
   Build 20230328 Updates
   
