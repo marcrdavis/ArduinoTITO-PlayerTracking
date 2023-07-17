@@ -1,8 +1,8 @@
 <script type="text/javascript">function playerName() { var name=prompt("Enter the Player Name",""); document.getElementById("pn").value=name; if (name) document.getElementById('rename').submit(); } 
 function playerComps() { var comps=prompt("Set comp credits to",""); document.getElementById("pc").value=comps; if (comps) document.getElementById('addcomps').submit(); } </script>
 <div style="max-width: 100%; margin: auto;"> <IFRAME id="iframe" style="display:none" name="hidden-form"></IFRAME> <hr /> <table style="width: 100%; table-layout: auto;"> 
-<FORM method="get" target="hidden-form"> <tr> <td> <button type="submit" style="width:100%; height:50px" name="cr" value="">Add Credits</button> </td> <td> 
-<input name="cr" style="width:99%; height:44px" value="1000" size="6"> </td> </tr> </FORM> <tr> <td> 
+<FORM method="get" target="hidden-form"> <tr> <td> <button type="submit" style="width:100%; height:50px" name="credits" value="">Add Credits</button> </td> <td> 
+<input name="cr" style="width:100%; height:44px;" value="1000" size="6"> </td> </tr> </FORM> <tr> <td> 
 <FORM method="get" target="hidden-form"> <button type="submit" style="width:100%; height:50px" name="mt" value="">Sound On</button> </FORM> </td> <td> 
 <FORM method="get" target="hidden-form"> <button type="submit" style="width:100%; height:50px" name="mo" value="">Sound Off</button> </FORM> </td> </tr> <tr> <td> 
 <FORM method="get" target="hidden-form"> <button type="submit" style="width:100%; height:50px" name="uk" value="">Unlock Play</button> </FORM> </td> <td> 
@@ -21,12 +21,12 @@ function playerComps() { var comps=prompt("Set comp credits to",""); document.ge
 <input type="hidden" name="pc" value="" size="6"><input type="hidden" id="pc" name="pc" value="" size="6"> </FORM> </td> </tr> <tr> <td colspan="2">&nbsp</td> </tr>
 <tr> <td colspan="2"><fieldset><legend>Update Display</legend>
 <FORM method="get" target="hidden-form"><div><button type="submit" style="width:100%; height:50px; position:relative; top: 68px;" name="cm" value="">Update Message</button></div><br>
-<div><input name="msg" style="width:99%; height:50px; position:relative; top: -68px;" placeholder="Enter your custom message here" value=""></div>
+<div><input name="msg" style="width:100%; height:50px; position:relative; top: -68px;" placeholder="Enter your custom message here" value=""></div>
 </FORM></fieldset></td> </tr> <tr> <td colspan="2">&nbsp;</td> </tr> <tr> <td colspan="2"><fieldset><legend>Update Ticket Info</legend>
 <FORM method="get" target="hidden-form"> 
-<div><input name="ud1" style="width:99%; height:50px" placeholder="Casino Name/Location" value=""></div><br>
-<div><input name="ud2" style="width:99%; height:50px" placeholder="Address Line 1" value=""></div><br>
-<div><input name="ud3" style="width:99%; height:50px" placeholder="Address Line 2" value=""></div><br>
+<div><input name="ud1" style="width:100%; height:50px" placeholder="Casino Name/Location" value=""></div><br>
+<div><input name="ud2" style="width:100%; height:50px" placeholder="Address Line 1" value=""></div><br>
+<div><input name="ud3" style="width:100%; height:50px" placeholder="Address Line 2" value=""></div><br>
 <div><button type="submit" style="width:100%; height:50px;" name="ud" value="">Update Ticket Info</button><div>
 </FORM> </fieldset></td> </tr> <tr> <td colspan="2">&nbsp<td> </tr></table> <hr /> <div style="text-align:center;">This device is compatible with the BETTORSlots Android/IOS apps for remote control.</div></div>
 
