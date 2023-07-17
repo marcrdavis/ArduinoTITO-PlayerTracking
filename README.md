@@ -49,6 +49,7 @@ By Marc Davis (07/17/2023)
 
   - Updates to the MEGA Sketches
   - Updated SAS protocol implementation based on work done to optimize it for the Arduino Uno
+  - Fixes a bug which under certain conditions could cause the player comps could go negative
 
   Build 20230328 Updates
   
