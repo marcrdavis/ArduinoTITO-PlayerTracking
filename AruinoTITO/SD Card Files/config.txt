@@ -1,6 +1,0 @@
-changeToCredits=0
-changeCredits=500
-useDHCP=1
-ipAddress=
-
-
