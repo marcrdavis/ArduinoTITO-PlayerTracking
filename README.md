@@ -15,7 +15,11 @@ By Marc Davis (07/17/2023)
   Robotdyn Uno WiFi R3 - however the code is not stable yet and may never be due to the overhead of the WifiAT library. 
   There are also a lot of configuration steps with this hardware which make it unfriendly for the un-initiated. 
 
+  Build 20230717
 
+  - Sorry! small bug in the RFID and MAG projects was keeping the TITO from working
+
+    
   Arduino TITO Deluxe – Build 20230706
 
   The Deluxe board is based on the Arduino Uno; which only has 2K of usable RAM for variables. The previous versions were not entirely stable due to the memory requirements of the Ethernet and SD libraries. The lack of 
