@@ -1,5 +1,5 @@
 /*
-  Arduino TITO and Player Tracking v2.0.20230706 WIFI & RFID
+  Arduino TITO and Player Tracking v2.0.20230717 WIFI & RFID
   by Marc R. Davis - Copyright (c) 2020-2022 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
@@ -127,7 +127,7 @@ String creditsToAdd = "1000";
 String changeCredits = "100";
 String gameName = "Slot Machine";
 String stringData = "";
-String versionString = "2.0.20230706";
+String versionString = "2.0.20230717";
 
 char ipAddress[15];
 char casinoName[30] = "THE CASINO";  // actual text should not exceed the display width

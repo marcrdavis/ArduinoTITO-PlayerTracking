@@ -1,5 +1,5 @@
 /*
-  Arduino TITO and Player Tracking v2.0.20230706 Ethernet + MAGSTRIPE
+  Arduino TITO and Player Tracking v2.0.20230717 Ethernet + MAGSTRIPE
   by Marc R. Davis - Copyright (c) 2020-2022 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
@@ -138,7 +138,7 @@ String creditsToAdd = "1000";
 String changeCredits = "100";
 String gameName = "Slot Machine";
 String stringData = "";
-String versionString = "2.0.20230706";
+String versionString = "2.0.20230717";
 
 char ipAddress[15];
 char casinoName[30] = "THE CASINO";  // actual text should not exceed the display width
@@ -1902,14 +1902,14 @@ void generalPoll()
   byte eventCode = 0;
 
   UCSR0B = 0b10011101;
-  Serial.write(0x80);
+  Serial1.write(0x80);
   delay(20);
-  Serial.write(0x81);
+  Serial1.write(0x81);
   UCSR0B = 0b10011100;
 
   delay(10);  // Wait for data on the serial bus
-  if (Serial.available() > 0) {
-    eventCode = Serial.read();
+  if (Serial1.available() > 0) {
+    eventCode = Serial1.read();
      if (sasOnline==false) sasOnline=true;
   }
 

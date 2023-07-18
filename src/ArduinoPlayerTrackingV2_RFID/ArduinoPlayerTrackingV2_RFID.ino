@@ -1,5 +1,5 @@
 /*
-  Arduino TITO and Player Tracking v2.0.20230706 Ethernet + RFID
+  Arduino TITO and Player Tracking v2.0.20230717 Ethernet + RFID
   by Marc R. Davis - Copyright (c) 2020-2022 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
@@ -131,7 +131,7 @@ String creditsToAdd = "1000";
 String changeCredits = "100";
 String gameName = "Slot Machine";
 String stringData = "";
-String versionString = "2.0.20230706";
+String versionString = "2.0.20230717";
 
 char ipAddress[15];
 char casinoName[30] = "THE CASINO";  // actual text should not exceed the display width
@@ -240,6 +240,7 @@ char keys[ROW_NUM][COLUMN_NUM] = {
 byte pin_rows[ROW_NUM] = {39, 38, 41}; // Keypad Pins 1,2,3
 byte pin_column[COLUMN_NUM] = {45, 42, 43, 40}; // Keypad Pins 7,6,5,4
 
+
 // ACT 8x2 Keypad
 /*const int ROW_NUM = 4; // Keypad is physically 8x2 but presents as a 4x4 matrix
 const int COLUMN_NUM = 4; 
@@ -254,7 +255,7 @@ char keys[ROW_NUM][COLUMN_NUM] = {
 
 // Pin definition
 byte pin_rows[ROW_NUM] = {38, 39, 40, 41}; // Keypad Pins 1,2,3,4
-byte pin_column[COLUMN_NUM] = {42, 43, 44, 45}; // Keypad Pins 5,6,7,8*/
+byte pin_column[COLUMN_NUM] = {42, 43, 44, 45}; // Keypad Pins 5,6,7,8 */
 
 // ------------------------------------------------------------------------------------------------------------
 // Setup instances
@@ -1887,14 +1888,14 @@ void generalPoll()
   byte eventCode = 0;
 
   UCSR0B = 0b10011101;
-  Serial.write(0x80);
+  Serial1.write(0x80);
   delay(20);
-  Serial.write(0x81);
+  Serial1.write(0x81);
   UCSR0B = 0b10011100;
 
   delay(10);  // Wait for data on the serial bus
-  if (Serial.available() > 0) {
-    eventCode = Serial.read();
+  if (Serial1.available() > 0) {
+    eventCode = Serial1.read();
      if (sasOnline==false) sasOnline=true;
   }
 
