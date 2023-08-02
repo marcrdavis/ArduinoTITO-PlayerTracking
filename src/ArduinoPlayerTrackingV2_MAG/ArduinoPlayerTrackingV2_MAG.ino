@@ -1,6 +1,6 @@
 /*
-  Arduino TITO and Player Tracking v2.0.20230717 Ethernet + MAGSTRIPE
-  by Marc R. Davis - Copyright (c) 2020-2022 All Rights Reserved
+  Arduino TITO and Player Tracking v2.0.20230802 Ethernet + MAGSTRIPE
+  by Marc R. Davis - Copyright (c) 2020-2023 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
   Portions of the Arduino SAS protocol implementation by Ian Walker - Thank you!
@@ -138,7 +138,7 @@ String creditsToAdd = "1000";
 String changeCredits = "100";
 String gameName = "Slot Machine";
 String stringData = "";
-String versionString = "2.0.20230717";
+String versionString = "2.0.20230802";
 
 char ipAddress[15];
 char casinoName[30] = "THE CASINO";  // actual text should not exceed the display width
@@ -275,7 +275,7 @@ char keys[ROW_NUM][COLUMN_NUM] = {
 
 // Pin definition
 byte pin_rows[ROW_NUM] = {38, 39, 40, 41}; // Keypad Pins 1,2,3,4
-byte pin_column[COLUMN_NUM] = {42, 43, 44, 45}; // Keypad Pins 5,6,7,8*/
+byte pin_column[COLUMN_NUM] = {42, 43, 44, 45}; // Keypad Pins 5,6,7,8 */
 
 // ------------------------------------------------------------------------------------------------------------
 // Setup instances
@@ -343,7 +343,7 @@ void setup()
     vfd.interface(interface);
     vfd.isModelClass(7003); // Set based on model of display
     vfd.GU7000_reset();
-    vfd.GU7000_init(); */ 
+    vfd.GU7000_init();*/  
 
     // Setup Card Reader
     card.begin(2);
@@ -381,17 +381,6 @@ void loop()
    updatePlayerStats();
   }
 
-  // If autoAddCredits is enabled then check the credit meter and add credits if necessary
-  if (autoAddCredits)
-  {
-    Credits = pollMeters(mCredits);
-    if (Credits != 0 && Credits < creditFloor) 
-    {
-      Serial.println(F("Low credit threshold reached!"));
-      addCredits(changeCredits);      
-    }
-  }
-  
   resetScroll=false;
 
   if (onlyTITO)
@@ -518,6 +507,18 @@ void loop()
       }      
     }
   }
+
+  // If autoAddCredits is enabled then check the credit meter and add credits if necessary
+  if (autoAddCredits)
+  {
+    Credits = pollMeters(mCredits);
+    if (Credits != 0 && Credits < creditFloor) 
+    {
+      Serial.println(F("Low credit threshold reached!"));
+      addCredits(changeCredits);      
+    }
+  }
+
 }
 
 // ------------------------------------------------------------------------------------------------------------
@@ -550,7 +551,7 @@ void useCompCredits()
   if (haveStartingStats && readGameData()) playerComps += abs((totalIn - tempTotalIn) * compPercentage);
   creds = playerComps;
     
-  if (creds <1){
+  if (creds < 1){
     showMessageOnVFD("NO COMPS AVAIL",0);
     delay(2000);
   }
@@ -1901,11 +1902,11 @@ void generalPoll()
 {
   byte eventCode = 0;
 
-  UCSR0B = 0b10011101;
+  UCSR1B = 0b10011101;
   Serial1.write(0x80);
   delay(20);
   Serial1.write(0x81);
-  UCSR0B = 0b10011100;
+  UCSR1B = 0b10011100;
 
   delay(10);  // Wait for data on the serial bus
   if (Serial1.available() > 0) {
