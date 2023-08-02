@@ -1,5 +1,5 @@
 /*
-  Arduino TITO v2.0.20230706T
+  Arduino TITO v2.0.20230802T
   by Marc R. Davis - Copyright (c) 2020-2023 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
