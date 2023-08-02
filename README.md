@@ -15,6 +15,9 @@ By Marc Davis (07/17/2023)
   Robotdyn Uno WiFi R3 - however the code is not stable yet and may never be due to the overhead of the WifiAT library. 
   There are also a lot of configuration steps with this hardware which make it unfriendly for the un-initiated. 
 
+  8/2/2023 - FOUND A BUG IN THE CURRENT VERSION THAT IS CAUSING THE TITO TO BREAK CONNECTION WITH THE MACHINE WHICH CAUSES
+  A VALIDATION FAILURE ERROR ON THE GAME. WORKING ON A FIX NOW.
+  
   Build 20230717
 
   - Sorry! small bug in the RFID and MAG projects was keeping the TITO from working
