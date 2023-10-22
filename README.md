@@ -10,10 +10,10 @@ By Marc Davis (08/02/2023)
   with the BETTORSlots TITO and TITO Deluxe hardware. Please see the included documentation for
   more details.
 
-  NEW! The MEGA sketches now support ESP8266 WiFi! The easiest way is to use the Songhe Mega2560 + WiFi R3; 
-  or you can use any compatible ESP8266 module. I am currently testing a Wifi version of the Deluxe sketch with the
-  Robotdyn Uno WiFi R3 - however the code is not stable yet and may never be due to the overhead of the WifiAT library. 
-  There are also a lot of configuration steps with this hardware which make it unfriendly for the un-initiated. 
+  10/22/2023 NEWS: I am currently working on a version of the Arduino TITO Deluxe using the new Arduino R4 WiFi board. 
+  Unfortunately this new hardware does not use the same serial registers as the old R3/Mega boards so converting the 
+  SAS 9-bit protocol is proving to be a bit of a challenge.
+  
 
   Build 20230802
 
