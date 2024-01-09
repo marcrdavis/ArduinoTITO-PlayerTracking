@@ -1,6 +1,6 @@
 /*
-  Arduino TITO Deluxe v2.0.20230802D
-  by Marc R. Davis - Copyright (c) 2020-2023 All Rights Reserved
+  Arduino TITO Deluxe v2.0.20240107D
+  by Marc R. Davis - Copyright (c) 2020-2024 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
   Portions of the Arduino SAS protocol implementation by Ian Walker - Thank you!
@@ -60,6 +60,7 @@ byte CRCL = 0x00;
 
 byte SVNS[2] = {SASAdr, 0x57};
 byte TP[2] = {SASAdr, 0x70};
+byte JREST[4] = {SASAdr, 0x94, 0x00, 0x00};
 byte LOCK[4] = {SASAdr, 0x01, 0x00, 0x00};
 byte ULOCK[4] = {SASAdr, 0x02, 0x00, 0x00};
 byte MUTE[4] = {SASAdr, 0x03, 0x00, 0x00};
@@ -324,6 +325,7 @@ void htmlPoll()
     if (strstr(stringData,"uk=")) reqResult=slotCommand(ULOCK,4);
     if (strstr(stringData,"eb=")) reqResult=slotCommand(EBILL,4);
     if (strstr(stringData,"db=")) reqResult=slotCommand(DBILL,4);
+    if (strstr(stringData,"jr=")) reqResult=slotCommand(JREST,4);
     if (strstr(stringData,"ec=")) changeToCredits=1;
     if (strstr(stringData,"dc=")) changeToCredits=0;
 
