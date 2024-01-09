@@ -17,7 +17,7 @@ By Marc Davis (01/09/2024)
      - Consolidates the RFID and the MAG sketches into one sketch to help reduce what I need to maintain
      - Removes the Tournament Mode; this was not very stable and not freqently used based on feedback. If you
        want to continue using Tournament mode then stay on the version 2.0 sketch
-    - Updates to the Game Manager code; removal of Tournament Mode controls and code cleanup
+     - Updates to the Game Manager code; removal of Tournament Mode controls and code cleanup
 
   I am continuing to work on the code for the Arduino R4 WiFi version. Still running into problems with
   9-bit serial mode. 
