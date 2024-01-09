@@ -15,6 +15,10 @@ By Marc Davis (08/02/2023)
   SAS 9-bit protocol is proving to be a bit of a challenge.
   
 
+  Build 20240107
+
+  - Adds Jackpot Reset to the Deluxe sketch and webUI
+
   Build 20230802
 
   - Fixes an issue with the MEGA sketches where the SAS general poll was failing due to the wrong serial UART being updated
