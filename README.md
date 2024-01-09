@@ -13,6 +13,7 @@ By Marc Davis (01/09/2024)
   1/9/2024 NEWS: I am currently working on Version 3.0 of the project. This new version takes improvements
   made in the TITODeluxe branch and merges them into the MEGA branch. Version 3.0 also includes some additional
   changes which may impact some users:
+  
      - Consolidates the RFID and the MAG sketches into one sketch to help reduce what I need to maintain
      - Removes the Tournament Mode; this was not very stable and not freqently used based on feedback. If you
        want to continue using Tournament mode then stay on the version 2.0 sketch
