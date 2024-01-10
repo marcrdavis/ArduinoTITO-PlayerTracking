@@ -15,9 +15,10 @@ By Marc Davis (01/09/2024)
   changes which may impact some users:
   
      - Consolidates the RFID and the MAG sketches into one sketch to help reduce what I need to maintain
-     - Removes the Tournament Mode; this was not very stable and not freqently used based on feedback. If you
-       want to continue using Tournament mode then stay on the version 2.0 sketch
+     - Removes the Tournament Mode; this was not very stable and not freqently used based on feedback. If
+       you want to continue using Tournament mode then stay on the version 2.0 sketch
      - Updates to the Game Manager code; removal of Tournament Mode controls and code cleanup
+     - Updates to the Player Tracking Server
 
   I am continuing to work on the code for the Arduino R4 WiFi version. Still running into problems with
   9-bit serial mode. 
@@ -25,7 +26,7 @@ By Marc Davis (01/09/2024)
   More details as version 3.0 develops!
   
 
-  Build 20240107
+  Version 2.0 Build 20240107
 
   - Adds Jackpot Reset to the Deluxe sketch and webUI
 
