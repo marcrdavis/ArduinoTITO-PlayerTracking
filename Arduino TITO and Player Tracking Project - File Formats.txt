@@ -1,4 +1,4 @@
-Arduino TITO and Player Tracking Project (V2.0.20230706)
+Arduino TITO and Player Tracking Project (V3.0.20240117)
 Marc R. Davis
 
 PLAYER AND CONFIG FILE FORMATS
