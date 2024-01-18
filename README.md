@@ -1,6 +1,6 @@
 # Arduino TITO and Player Tracking
 A homebrew slot machine TITO, player tracking and display project
-By Marc Davis (01/09/2024)
+By Marc Davis (01/17/2024)
 
   Project goals: To allow home slot machine owners the ability to add Ticket In/Ticket Out (TITO), 
   Remote Control, Monitoring and Player Tracking (Display/Keypad/Reader) to their SAS-Compatible 
@@ -10,21 +10,18 @@ By Marc Davis (01/09/2024)
   with the BETTORSlots TITO and TITO Deluxe hardware. Please see the included documentation for
   more details.
 
-  1/9/2024 NEWS: I am currently working on Version 3.0 of the project. This new version takes improvements
-  made in the TITODeluxe branch and merges them into the MEGA branch. Version 3.0 also includes some additional
-  changes which may impact some users:
-  
-     - Consolidates the RFID and the MAG sketches into one sketch to help reduce what I need to maintain
-     - Removes the Tournament Mode; this was not very stable and not freqently used based on feedback. If
-       you want to continue using Tournament mode then stay on the version 2.0 sketch
-     - Updates to the Game Manager code; removal of Tournament Mode controls and code cleanup
-     - Updates to the Player Tracking Server
+  January 17, 2024: Version 3.0 has been released!
 
-  I am continuing to work on the code for the Arduino R4 WiFi version. Still running into problems with
-  9-bit serial mode. 
-
-  More details as version 3.0 develops!
-  
+  Version 3.0 Build 20240117
+  - Consolidated the RFID and MAG sketches into one sketch to reduce what I need to maintain
+  - Adds 'Show Config' option to web UI and Game Manager to display the Arduino config.txt file
+  - Removes Tournament Mode; this was not very stable and not freqently used based on feedback. If
+    you want to continue using Tournament mode then stay on the version 2.0 sketch
+  - Updates to the Game Manager code; removal of Tournament Mode controls and code cleanup
+  - Updates to the Player Tracking Server
+  - The V2 sketches will remain for anyone needing that code; will eventually be retired. No additional
+    updates will be occurring to the V2 branch.
+  - Updated documentation
 
   Version 2.0 Build 20240107
 
