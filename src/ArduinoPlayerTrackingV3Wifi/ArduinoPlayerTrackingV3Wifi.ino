@@ -1,5 +1,5 @@
 /*
-    Arduino TITO and Player Tracking v3.0.20240117 WiFi
+    Arduino TITO and Player Tracking v3.0.20240123 WiFi
   by Marc R. Davis - Copyright (c) 2020-2024 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
@@ -194,7 +194,7 @@ String creditsToAdd = "1000";
 String changeCredits = "100";
 String gameName = "Slot Machine";
 String stringData = "";
-String versionString = "3.0.20240117";
+String versionString = "3.0.20240123";
 
 char ipAddress[15];
 char casinoName[30] = "THE CASINO";  // actual text should not exceed the display width
@@ -223,7 +223,6 @@ const char textHeader[] = "HTTP/1.1 200 OK\r\n"
  
 const char htmlFooter[] = "</html>\r\n\r\n";
 
-byte mac[] = { 0x38, 0x24, 0x01, 0x00, 0x00, 0x00 }; // Will be set by init routine
 IPAddress ip(192, 168, 1, 254);  // Default address in case ipAddress not populated in config and DHCP unavailable
 IPAddress serverIP(192, 168, 1, 254); // The board should not point to itself as a web client
 
@@ -1451,24 +1450,6 @@ String urlDecode(String str)
   }
 
   return decodedString;
-}
-
-// Get a MAC Address for ethernet
-
-void getMacAddress(byte* macAddr) {
-  int eepromOffset = 128;
-  int b = 0;
-  for (int c = 0; c < 6; c++) {
-    b = 0;
-    if (macAddr[c] == 0) {
-      b = EEPROM.read(eepromOffset + c);
-      if (b == 0 || b == 255) {
-        b = random(0, 255);
-        EEPROM.write(eepromOffset + c, b);
-      }
-      macAddr[c] = b;
-    }
-  }
 }
 
 // ------------------------------------------------------------------------------------------------------------
