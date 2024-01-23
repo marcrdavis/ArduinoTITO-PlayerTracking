@@ -12,6 +12,10 @@ By Marc Davis (01/17/2024)
 
   January 17, 2024: Version 3.0 has been released!
 
+  Version 3.0 Build 20240123
+  - Fixes an issue where the getMacAddress function was returning identical MAC addresses; you
+    will need to manually set the MAC address in code before uploading sketch
+
   Version 3.0 Build 20240117
   - Consolidated the RFID and MAG sketches into one sketch to reduce what I need to maintain
   - Adds 'Show Config' option to web UI and Game Manager to display the Arduino config.txt file
