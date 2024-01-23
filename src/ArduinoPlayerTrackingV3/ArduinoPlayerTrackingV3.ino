@@ -49,7 +49,6 @@
 #include <SPI.h>
 #include <SD.h>
 #include <Ethernet.h>
-#include <EEPROM.h>
 #include <Keypad.h>
 
 // ------------------------------------------------------------------------------------------------------------
