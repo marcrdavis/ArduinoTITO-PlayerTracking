@@ -1,6 +1,6 @@
 # Arduino TITO and Player Tracking
 A homebrew slot machine TITO, player tracking and display project
-By Marc Davis (01/17/2024)
+By Marc Davis (10/13/2024)
 
   Project goals: To allow home slot machine owners the ability to add Ticket In/Ticket Out (TITO), 
   Remote Control, Monitoring and Player Tracking (Display/Keypad/Reader) to their SAS-Compatible 
@@ -10,8 +10,14 @@ By Marc Davis (01/17/2024)
   with the BETTORSlots TITO and TITO Deluxe hardware. Please see the included documentation for
   more details.
 
-  January 17, 2024: Version 3.0 has been released!
+  October 13, 2024 - Arduino R4 WiFi Support Added!
 
+  Version 3.0 Build 20241013DR4
+  - Adds support for the Arduino UNO R4 WiFi Board - see Arduino TITO Deluxe - UNO R4 WiFi Project - Documentation.pdf
+    for additional details and instructions
+  - This implements the TITO Deluxe functionality on the UNO R4 WiFi
+  - Thanks to j.DeLutis and vashadow for their invaluable assistance in working out the 9-bit serial on the R4
+  
   Version 3.0 Build 20240123
   - Fixes an issue where the getMacAddress function was returning identical MAC addresses; you
     will need to manually set the MAC address in code before uploading sketch
