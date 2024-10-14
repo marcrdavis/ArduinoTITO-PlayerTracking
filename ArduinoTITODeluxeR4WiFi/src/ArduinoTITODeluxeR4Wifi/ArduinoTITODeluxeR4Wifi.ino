@@ -50,8 +50,8 @@ bool sasError = false;
 char* changeCredits = "500"; // Credits to add 
 char* webUI = "http://arduinotito.infinityfreeapp.com/?ip="; // The url of the site hosting the webUI; change if you want to host it locally; must append /?ip= to url
 
-char* ssid = "DAVWRT1900AC"; // Set your WiFi SSID here
-char* pass = "enterprise"; // Set your WiFi Password here
+char* ssid = ""; // Set your WiFi SSID here
+char* pass = ""; // Set your WiFi Password here
 int status = WL_IDLE_STATUS;
 
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }; // UPDATE BEFORE COMPILING IF YOU HAVE MULTIPLE MACHINES - Change to unique address for each board 
