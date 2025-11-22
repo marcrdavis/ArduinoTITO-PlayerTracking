@@ -10,7 +10,8 @@ By Marc Davis (10/13/2024)
   with the BETTORSlots TITO and TITO Deluxe hardware. Please see the included documentation for
   more details.
 
-  October 13, 2024 - Arduino R4 WiFi Support Added!
+  NEW! NOVEMBER 22, 2025
+  - New Web Management Console for the Deluxe sketches. This will eventually be ported to the Mega sketches
 
   Version 3.0 Build 20241013DR4
   - Adds support for the Arduino UNO R4 WiFi Board - see Arduino TITO Deluxe - UNO R4 WiFi Project - Documentation.pdf
