@@ -1,67 +1,727 @@
-<head><meta name='viewport' content='initial-scale=1.0'><title>Arduino TITO Deluxe</title>
-<style>body {font-family: Tahoma;} button {height: 50px; font-family: inherit; font-size: 1.0em; background-color: #008CBA; color: white; border: none; text-decoration: none; border-radius: 4px; 
-transition-duration: 0.4s;} button:hover { background-color: white; color: black; border: 2px solid #008CBA; } td { marginleft: 7.5px; marginright: 7.5px; } </style></head><body>
-<div style='max-width: 100%; margin: auto; text-align:center;'>
-<h2>Arduino TITO Deluxe</h2>
-<div style="max-width: 100%; margin: auto;"> <IFRAME id="iframe" style="display:none" name="hidden-form"></IFRAME> <hr /> 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arduino TITO Deluxe</title>
 
-<FORM method="get" target="hidden-form">
-<div><input id="ipAddress" name="ipAddress" style="width:100%; height:50px" placeholder="IP address of game to manage" value="" onchange="changeFormActions()"></div><br>
-</FORM>
+  <!-- Optional: Google Font + Icons (allowed per your note) -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 
-<table style="width: 100%; table-layout: auto;">
-
-<tr> <td> <FORM method="get" action="" target="hidden-form"><button type="submit" style="width:100%; height:50px" name="credits" value="">Add Credits</button> </td> <td> 
-<input name="cr" style="width:100%; height:50px; margin-bottom: 15px" value="1000" size="6"> </td> </tr> </FORM> <tr> <td> 
-<FORM method="get" target="hidden-form"> <button type="submit" style="width:100%; height:50px" name="mt" value="">Sound On</button> </FORM> </td> <td> 
-<FORM method="get" target="hidden-form"> <button type="submit" style="width:100%; height:50px" name="mo" value="">Sound Off</button> </FORM> </td> </tr> <tr> <td> 
-<FORM method="get" target="hidden-form"> <button type="submit" style="width:100%; height:50px" name="uk" value="">Unlock Play</button> </FORM> </td> <td> 
-<FORM method="get" target="hidden-form"> <button type="submit" style="width:100%; height:50px" name="lk" value="">Lock Play</button> </FORM> </td> </tr> <tr> <td> 
-<FORM method="get" target="hidden-form"> <button type="submit" style="width:100%; height:50px" name="eb" value="">Enable Bill Validator</button> </FORM> </td> <td> 
-<FORM method="get" target="hidden-form"> <button type="submit" style="width:100%; height:50px" name="db" value="">Disable Bill Validator</button> </FORM> </td> </tr> <tr> <td> 
-<FORM method="get" target="hidden-form"> <button type="submit" style="width:100%; height:50px" name="ec" value="">Change/Credits On</button> </FORM> </td> <td> 
-<FORM method="get" target="hidden-form"> <button type="submit" style="width:100%; height:50px" name="dc" value="">Change/Credits Off</button> </FORM> </td> </tr> <tr> <td> 
-<FORM method="get"> <button type="submit" style="width:100%; height:50px" name="ds" value="">Game Statistics</button> </FORM> </td> <td>
-<FORM method="get" target="hidden-form"> <button type="submit" style="width:100%; height:50px" name="rb" value="">Reboot Arduino</button> </FORM> </td> </tr> <tr> <td> 
-<FORM method="get" target="hidden-form"> <button type="submit" style="width:100%; height:50px" name="jr" value="">Jackpot Reset</button> </FORM> </td> <td> &nbsp; </td> </tr>
-<tr> <td colspan="2">&nbsp;</td> </tr> <tr> <td colspan="2"><fieldset><legend>Update Ticket Info</legend>
-<FORM method="get" target="hidden-form"> 
-<div><input name="ud1" style="width:100%; height:50px" placeholder="Casino Name/Location" value=""></div><br>
-<div><input name="ud2" style="width:100%; height:50px" placeholder="Address Line 1" value=""></div><br>
-<div><input name="ud3" style="width:100%; height:50px" placeholder="Address Line 2" value=""></div><br>
-<div><button type="submit" style="width:100%; height:50px;" name="ud" value="">Update Ticket Info</button><div>
-</FORM> </fieldset></td> </tr> <tr> <td colspan="2">&nbsp<td> </tr></table> <hr />
-Copyright (c) 2024 - The Arduino TITO and Player Tracking Project
-</div>
-
-<script>
-
-function getParameterByName(name, url = window.location.href) {
-    name = name.replace(/[\[\]]/g, '\\$&');
-    var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
-        results = regex.exec(url);
-    if (!results) return null;
-    if (!results[2]) return '';
-    return decodeURIComponent(results[2].replace(/\+/g, ' '));
-}
-
-function changeFormActions() {
-  var ipAddressElement = document.getElementById('ipAddress');
-
-  if (ipAddressElement) {
-    var ipAddress = ipAddressElement.value;
-    var forms = document.getElementsByTagName('form');
-
-    for (var i = 0; i < forms.length; i++) {
-      forms[i].action = "http://" + ipAddress;
+  <style>
+    :root {
+      --bg-main: #050816;
+      --bg-card: #101322;
+      --bg-card-soft: #15192b;
+      --accent: #00bcd4;
+      --accent-soft: rgba(0, 188, 212, 0.18);
+      --accent-strong: #26c6da;
+      --danger: #f44336;
+      --text-main: #f5f7ff;
+      --text-muted: #9fa6c0;
+      --border-subtle: #22263a;
+      --radius-lg: 14px;
+      --radius-md: 10px;
+      --shadow-soft: 0 15px 35px rgba(0, 0, 0, 0.45);
+      --shadow-soft-sm: 0 6px 18px rgba(0, 0, 0, 0.35);
+      --transition-fast: 0.2s ease-out;
     }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      font-family: "Roboto", Tahoma, sans-serif;
+      background:
+        radial-gradient(circle at 0% 0%, rgba(0, 188, 212, 0.22), transparent 50%),
+        radial-gradient(circle at 100% 100%, rgba(156, 39, 176, 0.15), transparent 55%),
+        var(--bg-main);
+      color: var(--text-main);
+    }
+
+    .app-shell {
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 18px 16px 22px;
+      background: rgba(3, 7, 18, 0.86);
+      border-radius: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(12px);
+    }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      gap: 10px;
+    }
+
+    .title-block {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .title-block h1 {
+      font-size: 1.2rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .title-pill {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent-strong);
+      border: 1px solid rgba(0, 188, 212, 0.3);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .status-pill {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      padding: 6px 12px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: #ef4444; /* default disconnected */
+      box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.18);
+    }
+
+    .status-connected .status-dot {
+      background: #22c55e;
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18);
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid var(--border-subtle);
+      margin: 14px 0 16px;
+    }
+
+    /* Connection section */
+    .card {
+      background: linear-gradient(145deg, var(--bg-card), var(--bg-card-soft));
+      border-radius: var(--radius-lg);
+      padding: 14px 14px 16px;
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-soft-sm);
+      margin-bottom: 14px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      gap: 6px;
+    }
+
+    .card-title {
+      font-size: 0.92rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title i {
+      font-size: 0.9rem;
+      color: var(--accent-strong);
+    }
+
+    .card-subtitle {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .ip-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: nowrap;
+    }
+
+    .ip-input {
+      flex: 1;
+      padding: 10px 11px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(15, 23, 42, 0.95);
+      color: var(--text-main);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+    }
+
+    .ip-input::placeholder {
+      color: rgba(148, 163, 184, 0.75);
+    }
+
+    .ip-input:focus {
+      border-color: var(--accent-strong);
+      box-shadow: 0 0 0 1px rgba(0, 188, 212, 0.4);
+      background: #020617;
+    }
+
+    .btn-pill {
+      border-radius: 999px;
+      padding: 0 14px;
+      font-size: 0.78rem;
+      border: none;
+      cursor: pointer;
+      background: var(--accent);
+      color: #020617;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      transition: background var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .btn-pill i {
+      font-size: 0.9rem;
+    }
+
+    .btn-pill:hover {
+      background: var(--accent-strong);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(0, 188, 212, 0.3);
+    }
+
+    /* Controls grid */
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    @media (max-width: 460px) {
+      .controls-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .control-group {
+      background: rgba(15, 23, 42, 0.9);
+      border-radius: var(--radius-lg);
+      padding: 10px 10px 12px;
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .control-group-header {
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+    }
+
+    .btn-main {
+      height: 44px;
+      width: 100%;
+      border-radius: 9px;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.28), rgba(15, 23, 42, 0.95));
+      color: var(--text-main);
+      font-size: 0.86rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      outline: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition:
+        transform var(--transition-fast),
+        box-shadow var(--transition-fast),
+        background var(--transition-fast),
+        border-color var(--transition-fast);
+    }
+
+    .btn-main i {
+      font-size: 0.95rem;
+    }
+
+    .btn-main:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 22px rgba(15, 23, 42, 0.9);
+      border-color: var(--accent);
+      background: radial-gradient(circle at top left, rgba(45, 212, 191, 0.32), rgba(15, 23, 42, 1));
+    }
+
+    .btn-secondary {
+      background: radial-gradient(circle at top left, rgba(148, 163, 184, 0.25), rgba(15, 23, 42, 0.98));
+    }
+
+    .btn-danger {
+      background: radial-gradient(circle at top left, rgba(244, 67, 54, 0.3), rgba(15, 23, 42, 0.98));
+      border-color: rgba(248, 113, 113, 0.4);
+    }
+
+    .btn-danger:hover {
+      border-color: var(--danger);
+      box-shadow: 0 10px 25px rgba(239, 68, 68, 0.35);
+    }
+
+    .credits-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .credits-input {
+      width: 100%;
+      height: 44px;
+      border-radius: 9px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: rgba(15, 23, 42, 0.95);
+      color: var(--text-main);
+      padding: 0 10px;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+    }
+
+    .credits-input:focus {
+      border-color: var(--accent-strong);
+      box-shadow: 0 0 0 1px rgba(0, 188, 212, 0.45);
+      background: #020617;
+    }
+
+    /* Ticket Info card */
+    .ticket-card {
+      margin-top: 4px;
+    }
+
+    .form-group {
+      margin-bottom: 8px;
+    }
+
+    .form-label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    .text-input {
+      width: 100%;
+      height: 42px;
+      border-radius: 9px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: rgba(15, 23, 42, 0.98);
+      color: var(--text-main);
+      padding: 0 10px;
+      font-size: 0.88rem;
+      outline: none;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+    }
+
+    .text-input::placeholder {
+      color: rgba(148, 163, 184, 0.7);
+    }
+
+    .text-input:focus {
+      border-color: var(--accent-strong);
+      box-shadow: 0 0 0 1px rgba(0, 188, 212, 0.45);
+      background: #020617;
+    }
+
+    .footer {
+      margin-top: 14px;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .footer span {
+      opacity: 0.8;
+    }
+
+    .footer strong {
+      color: var(--accent-strong);
+      font-weight: 500;
+    }
+
+    iframe {
+      display: none;
+    }
+
+@media (max-width: 420px) {
+  .app-header {
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .title-block {
+    align-items: center;
+    text-align: center;
+  }
+
+  .title-block h1 {
+    font-size: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .title-pill {
+    font-size: 0.6rem;
+    letter-spacing: 0.14em;
+    padding: 3px 10px;
+  }
+
+  .status-pill {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.68rem;
+    padding: 6px 8px;
+    white-space: normal;          /* allow wrapping */
+    text-align: center;
+    box-sizing: border-box;
+  }
+
+  .status-pill span#statusText {
+    display: inline-block;
+    max-width: 100%;
   }
 }
 
-// Read address from querystring if present and populate field
-var ip = getParameterByName("ip");
-if (ip) document.getElementById('ipAddress').value=ip;
-changeFormActions();
+  </style>
+</head>
 
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="title-block">
+        <h1>
+          <i class="fa-solid fa-microchip"></i>
+          Arduino TITO Deluxe
+        </h1>
+        <div class="title-pill">
+          <span>Management Console - Version 3.0</span>
+        </div>
+      </div>
+
+      <div id="statusPill" class="status-pill">
+        <span class="status-dot"></span>
+        <span id="statusText">Not Connected</span>
+      </div>
+    </header>
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">
+            <i class="fa-solid fa-network-wired"></i>
+            <span>Game Connection</span>
+          </div>
+          <div class="card-subtitle">Enter the IP address of the game you want to manage.</div>
+        </div>
+      </div>
+
+      <form method="get" target="hidden-form" onsubmit="changeFormActions(); return false;">
+        <div class="ip-row">
+          <input
+            id="ipAddress"
+            name="ipAddress"
+            class="ip-input"
+            placeholder="IP address of game to manage"
+            value=""
+            autocomplete="off"
+            onchange="changeFormActions()" />
+
+          <button type="button" class="btn-pill" onclick="changeFormActions()">
+            <i class="fa-solid fa-plug"></i>
+            Apply
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Hidden iframe for background requests -->
+    <iframe id="iframe" name="hidden-form"></iframe>
+
+    <!-- Controls -->
+    <div class="controls-grid">
+      <!-- Credits -->
+      <div class="control-group">
+        <div class="control-group-header">Credits</div>
+        <form method="get" target="hidden-form">
+          <div class="credits-row">
+            <button type="submit" class="btn-main" name="credits" value="">
+              <i class="fa-solid fa-coins"></i>
+              Add Credits
+            </button>
+            <input
+              name="cr"
+              class="credits-input"
+              value="1000"
+              size="6"
+              inputmode="numeric" />
+          </div>
+        </form>
+      </div>
+
+      <!-- Sound -->
+      <div class="control-group">
+        <div class="control-group-header">Sound</div>
+        <form method="get" target="hidden-form">
+          <button type="submit" class="btn-main" name="mt" value="">
+            <i class="fa-solid fa-volume-high"></i>
+            Sound On
+          </button>
+        </form>
+        <form method="get" target="hidden-form">
+          <button type="submit" class="btn-main btn-secondary" name="mo" value="">
+            <i class="fa-solid fa-volume-xmark"></i>
+            Sound Off
+          </button>
+        </form>
+      </div>
+
+      <!-- Play Lock -->
+      <div class="control-group">
+        <div class="control-group-header">Play Lock</div>
+        <form method="get" target="hidden-form">
+          <button type="submit" class="btn-main" name="uk" value="">
+            <i class="fa-solid fa-unlock"></i>
+            Unlock Play
+          </button>
+        </form>
+        <form method="get" target="hidden-form">
+          <button type="submit" class="btn-main btn-secondary" name="lk" value="">
+            <i class="fa-solid fa-lock"></i>
+            Lock Play
+          </button>
+        </form>
+      </div>
+
+      <!-- Bill Validator -->
+      <div class="control-group">
+        <div class="control-group-header">Bill Validator</div>
+        <form method="get" target="hidden-form">
+          <button type="submit" class="btn-main" name="eb" value="">
+            <i class="fa-solid fa-money-bill-wave"></i>
+            Enable
+          </button>
+        </form>
+        <form method="get" target="hidden-form">
+          <button type="submit" class="btn-main btn-secondary" name="db" value="">
+            <i class="fa-solid fa-ban"></i>
+            Disable
+          </button>
+        </form>
+      </div>
+
+      <!-- Change / Credits -->
+      <div class="control-group">
+        <div class="control-group-header">Change / Credits</div>
+        <form method="get" target="hidden-form">
+          <button type="submit" class="btn-main" name="ec" value="">
+            <i class="fa-solid fa-toggle-on"></i>
+            Change/Credits On&nbsp;
+          </button>
+        </form>
+        <form method="get" target="hidden-form">
+          <button type="submit" class="btn-main btn-secondary" name="dc" value="">
+            <i class="fa-solid fa-toggle-off"></i>
+            Change/Credits Off
+          </button>
+        </form>
+      </div>
+
+      <!-- System -->
+      <div class="control-group">
+        <div class="control-group-header">System</div>
+        <!-- Note: This one intentionally NOT using hidden-form, just like your original -->
+        <form method="get">
+          <button type="submit" class="btn-main" name="ds" value="">
+            <i class="fa-solid fa-chart-line"></i>
+            Game Statistics
+          </button>
+        </form>
+        <form method="get" target="hidden-form">
+          <button type="submit" class="btn-main btn-danger" name="rb" value="">
+            <i class="fa-solid fa-rotate-right"></i>
+            Reboot Arduino
+          </button>
+        </form>
+      </div>
+
+      <!-- Jackpot -->
+      <div class="control-group">
+        <div class="control-group-header">Jackpot</div>
+        <form method="get" target="hidden-form">
+          <button type="submit" class="btn-main btn-danger" name="jr" value="">
+            <i class="fa-solid fa-burst"></i>
+            Jackpot Reset
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Ticket Info -->
+    <div class="card ticket-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">
+            <i class="fa-solid fa-ticket-simple"></i>
+            <span>Ticket Information</span>
+          </div>
+          <div class="card-subtitle">
+            Update the printed ticket information for this game.
+          </div>
+        </div>
+      </div>
+
+      <form method="get" target="hidden-form">
+        <div class="form-group">
+          <label class="form-label" for="ud1">Casino Name / Location</label>
+          <input
+            id="ud1"
+            name="ud1"
+            class="text-input"
+            placeholder="e.g. MANCAVE Casino"
+            value="" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="ud2">Address Line 1</label>
+          <input
+            id="ud2"
+            name="ud2"
+            class="text-input"
+            placeholder="e.g. 123 Ocean Avenue"
+            value="" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="ud3">Address Line 2</label>
+          <input
+            id="ud3"
+            name="ud3"
+            class="text-input"
+            placeholder="City, State ZIP"
+            value="" />
+        </div>
+
+        <button type="submit" class="btn-main" name="ud" value="" style="margin-top: 6px;">
+          <i class="fa-solid fa-save"></i>
+          Update Ticket Info
+        </button>
+      </form>
+    </div>
+
+    <div class="footer">
+      <span>Copyright &copy; 2025</span>
+      &nbsp;&mdash;&nbsp;
+      <strong><a href="https://github.com/marcrdavis/ArduinoTITO-PlayerTracking">Arduino TITO &amp; Player Tracking Project</a></strong>
+    </div>
+  </div>
+
+<script>
+  function getParameterByName(name, url = window.location.href) {
+    name = name.replace(/[\[\]]/g, "\\$&");
+    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+      results = regex.exec(url);
+    if (!results) return null;
+    if (!results[2]) return "";
+    return decodeURIComponent(results[2].replace(/\+/g, " "));
+  }
+
+  function updateStatus(isConnected, ip) {
+    var pill = document.getElementById("statusPill");
+    var text = document.getElementById("statusText");
+    if (!pill || !text) return;
+
+    if (isConnected && ip) {
+      pill.classList.add("status-connected");
+      text.textContent = "Connected to " + ip;
+    } else {
+      pill.classList.remove("status-connected");
+      text.textContent = "Not Connected";
+    }
+  }
+
+  function changeFormActions() {
+    var ipAddressElement = document.getElementById("ipAddress");
+    if (!ipAddressElement) return;
+
+    var ipAddress = ipAddressElement.value.trim();
+
+    // 🔹 Save IP to localStorage whenever changed
+    if (ipAddress) {
+      localStorage.setItem("lastUsedIP", ipAddress);
+    }
+
+    var forms = document.getElementsByTagName("form");
+
+    if (ipAddress.length > 0) {
+      for (var i = 0; i < forms.length; i++) {
+        forms[i].action = "http://" + ipAddress;
+      }
+      updateStatus(true, ipAddress);
+    } else {
+      for (var j = 0; j < forms.length; j++) {
+        forms[j].removeAttribute("action");
+      }
+      updateStatus(false);
+    }
+  }
+
+  // 🔹 Auto-restore IP from querystring OR localStorage on load
+  (function () {
+    var ipFromQuery = getParameterByName("ip");
+    var savedIP = localStorage.getItem("lastUsedIP");
+
+    var ipInput = document.getElementById("ipAddress");
+
+    if (ipInput) {
+      if (ipFromQuery) {
+        ipInput.value = ipFromQuery;
+      } else if (savedIP) {
+        ipInput.value = savedIP;
+      }
+    }
+    changeFormActions();
+  })();
 </script>
- 
+
+
+</body>
+</html>
