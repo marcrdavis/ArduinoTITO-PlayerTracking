@@ -1,6 +1,6 @@
 /*
-    Arduino TITO and Player Tracking v3.0.20240123 WiFi
-  by Marc R. Davis - Copyright (c) 2020-2024 All Rights Reserved
+    Arduino TITO and Player Tracking v3.1.20260619 WiFi
+  by Marc R. Davis - Copyright (c) 2020-2026 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
   Portions of the Arduino SAS protocol implementation by Ian Walker - Thank you!
@@ -184,6 +184,7 @@ bool sasError = false;
 bool inAdminMenu = false;
 bool inPlayerMenu = false;
 bool resetScroll = false;
+bool useHostedUI = false;
 
 String ipStr;
 String cardHolder = "No Card Inserted";
@@ -193,7 +194,7 @@ String creditsToAdd = "1000";
 String changeCredits = "100";
 String gameName = "Slot Machine";
 String stringData = "";
-String versionString = "3.0.20240123";
+String versionString = "3.1.20260619";
 
 char ipAddress[15];
 char casinoName[30] = "THE CASINO";  // actual text should not exceed the display width
@@ -204,6 +205,7 @@ char adminMenu[150] = "1=Add Credits  2=Sound On  3=Sound Off  4=Unlock Game  5=
 char playerMenu[55] = "1=Show Comp Balance  2=Use Comp Credits  0=Exit Menu";
 char scrollBuffer[296];
 char fixedBuffer[21];
+char* webUI = "http://arduinotito.infinityfreeapp.com/?ip="; // The url of the site hosting the webUI; change if you want to host it locally; must append /?ip= to url
 char ssid[32];  // your Wifi network SSID - must be set in the config.txt file
 char pass[32];  // your Wifi network password - must be set in the config.txt file
 
@@ -637,6 +639,7 @@ void readConfig()
   if (ini.getValue(NULL, "creditFloor", buffer, 256)) creditFloor = atol(buffer);
   if (ini.getValue(NULL, "wifiSSID", buffer, 256)) strcpy(ssid, buffer);
   if (ini.getValue(NULL, "wifiPassword", buffer, 256)) strcpy(pass, buffer);
+  if (ini.getValue(NULL, "useHostedUI", buffer, 256)) useHostedUI = atoi(buffer);
 
   if (creditFloor == 0 && autoAddCredits == 1)
   {
@@ -1451,6 +1454,20 @@ String urlDecode(String str)
   return decodedString;
 }
 
+String cleanQueryValue(String value)
+{
+  value.replace("%", "%25");
+  value.replace(" ", "%20");
+  value.replace("&", "%26");
+  value.replace("#", "%23");
+  value.replace("'", "%27");
+  value.replace("\"", "%22");
+  value.replace("?", "%3F");
+  value.replace("=", "%3D");
+
+  return value;
+}
+
 // ------------------------------------------------------------------------------------------------------------
 // HTML Server
 // ------------------------------------------------------------------------------------------------------------
@@ -1784,46 +1801,67 @@ void htmlPoll()
     }
     else if (url.equals("/"))
     {
-      // Show web interface
-
-      sdFile = SD.open("index.htm", O_READ);
-      if (sdFile)
+      if (useHostedUI)
       {
-        client.print(htmlHeader);
-        client.print(F("<head><meta name='viewport' content='initial-scale=1.0'><title>Arduino TITO and Player Tracking</title>"));
-        client.print(F("<style>body {font-family: Tahoma;} button {font-family: inherit; font-size: 1.0em; background-color: #008CBA; color: white; border: none; text-decoration: none; border-radius: 4px; transition-duration: 0.4s;} button:hover { background-color: white; color: black; border: 2px solid #008CBA; } td { margin-left: 7.5px; margin-right: 7.5px; } </style></head><body>"));
-        client.print(F("<div style='max-width: 100%; margin: auto; text-align:center;'>"));
-        client.print(F("<h2>Arduino TITO and Player Tracking</h2>"));
-        client.print("Game Name: <b>" + gameName + "</b>&nbsp;&nbsp;&nbsp;");
-        client.print("Current player: <b> " + cardHolder + "</b><br>");
-        client.print("IP Address: <b>" + ipStr + "</b>&nbsp;&nbsp;&nbsp;");
-        client.print("Version: <b> " + versionString + "</b></div>");
-
-        while (sdFile.available()) {
-          client.print(sdFile.readStringUntil('\n'));
-        }
-
-        sdFile.close();
-        client.print(F("</div></body>"));
-        client.print(htmlFooter);
+        // Load Web UI from hosted site
+        client.print(F("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n<!DOCTYPE HTML>\r\n<html><head><meta http-equiv='Refresh' content='0; url=\""));
+        client.print(webUI);
+        client.print(ipStr + "&board=MEGA&gn=" + gameName + "&cp=" + cardHolder + "&v=" + versionString);
+        client.println(F("\"' /></head></html>"));
         Serial.println(F("Web Interface Loaded"));
       }
       else
       {
-        // UI Not available (SD Card error?)
+        // Load Web UI from local SD card
+        sdFile = SD.open("index.htm", O_READ);
 
-        client.print(htmlHeader);
-        client.print(F("<head><meta name='viewport' content='initial-scale=1.0'><style>body {font-family: Tahoma;}</style></head><body>"));
-        client.print(F("<div style='max-width: 100%; margin: auto; text-align:center;'>"));
-        client.print(F("<h2>Arduino TITO and Player Tracking</h2>"));
-        client.print("Game Name: <b>" + gameName + "</b>&nbsp;&nbsp;&nbsp;");
-        client.print("Current player: <b> " + cardHolder + "</b><br>");
-        client.print("IP Address: <b>" + ipStr + "</b>&nbsp;&nbsp;&nbsp;");
-        client.print("Version: <b> " + versionString + "</b><br><hr>");
-        client.print(F("Unable to load User Interface!<br>This device can still be controlled remotely with the Game Manager Windows app or the BETTORSlots Android/IOS apps.<br>"));
-        client.print(F("</div></body>"));
-        client.print(htmlFooter);
-        Serial.println(F("Web Interface failed to load"));
+        if (sdFile)
+        {
+          client.print(htmlHeader);
+          String qs = "/?ip=" + ipStr
+                            + "&board=MEGA"
+                            + "&gn=" + cleanQueryValue(gameName)
+                            + "&cp=" + cleanQueryValue(cardHolder)
+                            + "&v=" + cleanQueryValue(versionString);
+
+          bool injectedState = false;
+
+          while (sdFile.available())
+          {
+            String line = sdFile.readStringUntil('\n');
+            client.println(line);
+
+            if (!injectedState && line.indexOf("<body") >= 0)
+            {
+              client.print(F("<script>history.replaceState(null,'','"));
+              client.print(qs);
+              client.println(F("');</script>"));
+
+              injectedState = true;
+            }
+          }
+
+          sdFile.close();
+
+          Serial.println(F("Web Interface Loaded"));
+        }
+        else
+        {
+          // UI Not available (SD Card error?)
+          client.print(htmlHeader);
+          client.print(F("<head><meta name='viewport' content='initial-scale=1.0'><style>body {font-family: Tahoma;}</style></head><body>"));
+          client.print(F("<div style='max-width: 100%; margin: auto; text-align:center;'>"));
+          client.print(F("<h2>Arduino TITO and Player Tracking</h2>"));
+          client.print("Game Name: <b>" + gameName + "</b>&nbsp;&nbsp;&nbsp;");
+          client.print("Current player: <b> " + cardHolder + "</b><br>");
+          client.print("IP Address: <b>" + ipStr + "</b>&nbsp;&nbsp;&nbsp;");
+          client.print("Version: <b> " + versionString + "</b><br><hr>");
+          client.print(F("Unable to load User Interface from SD card!<br>This game can still be controlled remotely with the Game Manager Windows app or from the hosted UI: "));
+          client.print(webUI);
+          client.print(F("</div></body>"));
+          client.print(htmlFooter);
+          Serial.println(F("Web Interface failed to load"));
+        }
       }
     }
     else

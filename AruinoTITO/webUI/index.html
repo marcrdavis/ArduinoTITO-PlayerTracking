@@ -89,6 +89,8 @@
       border: 1px solid rgba(0, 188, 212, 0.3);
       display: inline-flex;
       align-items: center;
+      justify-content: center;
+      text-align: center;
       gap: 4px;
     }
 
@@ -296,6 +298,16 @@
       box-shadow: 0 10px 25px rgba(239, 68, 68, 0.35);
     }
 
+    .btn-main:disabled,
+    .btn-pill:disabled,
+    .text-input:disabled,
+    .credits-input:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
     .credits-row {
       display: flex;
       gap: 8px;
@@ -430,10 +442,10 @@
       <div class="title-block">
         <h1>
           <i class="fa-solid fa-microchip"></i>
-          Arduino TITO Deluxe
+          <span id="boardTitle">Arduino TITO Deluxe</span>
         </h1>
         <div class="title-pill">
-          <span>Management Console - Version 3.0</span>
+          <span id="versionText">Version 3.1</span>
         </div>
       </div>
 
@@ -470,6 +482,18 @@
             Apply
           </button>
         </div>
+
+        <div id="gameDetailsFields">
+          <div class="form-group" style="margin-top: 10px;">
+            <label class="form-label" for="gameName">Game Name</label>
+            <input id="gameName" class="text-input" value="Unknown" readonly />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="currentPlayer">Current Player</label>
+            <input id="currentPlayer" class="text-input" value="None" readonly />
+          </div>
+        </div>
       </form>
     </div>
 
@@ -477,7 +501,7 @@
     <iframe id="iframe" name="hidden-form"></iframe>
 
     <!-- Controls -->
-    <div class="controls-grid">
+    <div id="controlsGrid" class="controls-grid">
       <!-- Credits -->
       <div class="control-group">
         <div class="control-group-header">Credits</div>
@@ -575,6 +599,12 @@
             Game Statistics
           </button>
         </form>
+        <form method="get">
+          <button id="showConfigButton" type="submit" class="btn-main btn-secondary" name="cf" value="">
+            <i class="fa-solid fa-sliders"></i>
+            Show Config
+          </button>
+        </form>
         <form method="get" target="hidden-form">
           <button type="submit" class="btn-main btn-danger" name="rb" value="">
             <i class="fa-solid fa-rotate-right"></i>
@@ -593,10 +623,68 @@
           </button>
         </form>
       </div>
+
+      <!-- Player Options -->
+      <div id="playerOptionsSection" class="control-group">
+        <div class="control-group-header">Player Options</div>
+        <form method="get">
+          <button type="submit" class="btn-main" name="ps" value="">
+            <i class="fa-solid fa-chart-simple"></i>
+            Player Statistics
+          </button>
+        </form>
+        <form id="rename" method="get" target="hidden-form">
+          <button type="button" class="btn-main btn-secondary" name="btnPlayer" value="" onclick="playerName()">
+            <i class="fa-solid fa-user-pen"></i>
+            Update Player Name
+          </button>
+          <input type="hidden" id="pn" name="pn" value="" />
+        </form>
+        <form id="addcomps" method="get" target="hidden-form">
+          <button type="button" class="btn-main btn-secondary" name="btnPlayerComps" value="" onclick="playerComps()">
+            <i class="fa-solid fa-gift"></i>
+            Set Player Comps
+          </button>
+          <input type="hidden" id="pc" name="pc" value="" />
+        </form>
+      </div>
+    </div>
+
+    <!-- Update Display -->
+    <div id="updateDisplaySection" class="card ticket-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">
+            <i class="fa-solid fa-display"></i>
+            <span>Update Display</span>
+          </div>
+          <div class="card-subtitle">
+            Send a custom message to the game display.
+          </div>
+        </div>
+      </div>
+
+      <form method="get" target="hidden-form">
+        <input type="hidden" name="cm" value="" />
+        <div class="form-group">
+          <label class="form-label" for="msg">Display Message</label>
+          <input
+            id="msg"
+            name="msg"
+            class="text-input"
+            placeholder="Enter your custom message here"
+            value="" />
+        </div>
+
+        <button type="submit" class="btn-main" style="margin-top: 6px;">
+          <i class="fa-solid fa-message"></i>
+          Update Message
+        </button>
+      </form>
     </div>
 
     <!-- Ticket Info -->
-    <div class="card ticket-card">
+    <div id="ticketInfoSection" class="card ticket-card">
       <div class="card-header">
         <div>
           <div class="card-title">
@@ -610,6 +698,8 @@
       </div>
 
       <form method="get" target="hidden-form">
+        <input type="hidden" name="ud" value="" />
+
         <div class="form-group">
           <label class="form-label" for="ud1">Casino Name / Location</label>
           <input
@@ -640,7 +730,7 @@
             value="" />
         </div>
 
-        <button type="submit" class="btn-main" name="ud" value="" style="margin-top: 6px;">
+        <button type="submit" class="btn-main" style="margin-top: 6px;">
           <i class="fa-solid fa-save"></i>
           Update Ticket Info
         </button>
@@ -648,13 +738,41 @@
     </div>
 
     <div class="footer">
-      <span>Copyright &copy; 2025</span>
+      <span>Copyright &copy; 2026</span>
       &nbsp;&mdash;&nbsp;
       <strong><a href="https://github.com/marcrdavis/ArduinoTITO-PlayerTracking">Arduino TITO &amp; Player Tracking Project</a></strong>
     </div>
   </div>
 
 <script>
+  function playerName() {
+    var name = prompt("Enter the Player Name", "");
+    var playerNameInput = document.getElementById("pn");
+    var renameForm = document.getElementById("rename");
+
+    if (playerNameInput) {
+      playerNameInput.value = name;
+    }
+
+    if (name && renameForm) {
+      renameForm.submit();
+    }
+  }
+
+  function playerComps() {
+    var comps = prompt("Set comp credits to", "");
+    var playerCompsInput = document.getElementById("pc");
+    var compsForm = document.getElementById("addcomps");
+
+    if (playerCompsInput) {
+      playerCompsInput.value = comps;
+    }
+
+    if (comps && compsForm) {
+      compsForm.submit();
+    }
+  }
+
   function getParameterByName(name, url = window.location.href) {
     name = name.replace(/[\[\]]/g, "\\$&");
     var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
@@ -675,6 +793,78 @@
     } else {
       pill.classList.remove("status-connected");
       text.textContent = "Not Connected";
+    }
+  }
+
+  function setControlsDisabled(containerId, isDisabled) {
+    var container = document.getElementById(containerId);
+    if (!container) return;
+
+    var controls = container.querySelectorAll("button, input, select, textarea");
+    for (var i = 0; i < controls.length; i++) {
+      controls[i].disabled = isDisabled;
+    }
+  }
+
+  function getBoardType() {
+    var board = (getParameterByName("board") || "DELUXE").toUpperCase();
+    if (board !== "MEGA") {
+      board = "DELUXE";
+    }
+    return board;
+  }
+
+  function updatePageIdentity() {
+    var board = getBoardType();
+    var version = getParameterByName("v") || "3.1";
+    var boardTitle = document.getElementById("boardTitle");
+    var versionText = document.getElementById("versionText");
+
+    if (boardTitle) {
+      boardTitle.textContent = "Arduino TITO " + board;
+    }
+
+    if (versionText) {
+      versionText.textContent = "Version " + version;
+    }
+
+    document.title = "Arduino TITO " + board;
+  }
+
+  function updateGameDetails(ipAddress) {
+    var gameNameInput = document.getElementById("gameName");
+    var currentPlayerInput = document.getElementById("currentPlayer");
+
+    var isConnected = ipAddress && ipAddress.length > 0;
+    var gameName = isConnected ? (getParameterByName("gn") || "Slot Machine") : "Unknown";
+    var currentPlayerRaw = isConnected ? getParameterByName("cp") : null;
+    var noPlayerCard = !currentPlayerRaw || currentPlayerRaw.trim() === "" || currentPlayerRaw.trim() === "No Card Inserted";
+    var currentPlayer = noPlayerCard ? "None" : currentPlayerRaw;
+
+    if (gameNameInput) {
+      gameNameInput.value = gameName;
+    }
+
+    if (currentPlayerInput) {
+      currentPlayerInput.value = currentPlayer;
+    }
+
+    var gameDetailsFields = document.getElementById("gameDetailsFields");
+    if (gameDetailsFields) {
+      gameDetailsFields.style.display = getBoardType() === "MEGA" ? "block" : "none";
+    }
+
+    setControlsDisabled("controlsGrid", !isConnected);
+    setControlsDisabled("updateDisplaySection", !isConnected || getBoardType() !== "MEGA");
+    setControlsDisabled("ticketInfoSection", !isConnected);
+
+    if (isConnected) {
+      setControlsDisabled("playerOptionsSection", noPlayerCard || currentPlayer === "None");
+    }
+
+    var showConfigButton = document.getElementById("showConfigButton");
+    if (showConfigButton) {
+      showConfigButton.disabled = !isConnected || getBoardType() !== "MEGA";
     }
   }
 
@@ -702,10 +892,14 @@
       }
       updateStatus(false);
     }
+
+    updateGameDetails(ipAddress);
   }
 
   // 🔹 Auto-restore IP from querystring OR localStorage on load
   (function () {
+    updatePageIdentity();
+
     var ipFromQuery = getParameterByName("ip");
     var savedIP = localStorage.getItem("lastUsedIP");
 

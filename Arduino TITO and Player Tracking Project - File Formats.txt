@@ -1,4 +1,4 @@
-Arduino TITO and Player Tracking Project (V3.0.20240117)
+Arduino TITO and Player Tracking Project (V3.1.20260619)
 Marc R. Davis
 
 PLAYER AND CONFIG FILE FORMATS
@@ -24,6 +24,7 @@ ipAddress=  		<- Manual IP Address if useDHCP is set to 0
 serverIPAddress=  	<- IP Address of server/machine hosting the card data; Do not set this to be itself
 autoAddCredits=0        <- MEGA ONLY - Set to 1 to automatically add the number of credits in 'changeCredits' to the game when the creditFloor value is reached
 creditFloor=10          <- MEGA ONLY - Set to a number greater than 0 at which point you want the game to automatically add credits if autoAddCredits is enabled
+useHostedUI=0           <- MEGA ONLY (New in 20260619) - Set to 1 to use the hosted user interface; 0 for local UI
 gameName=Slot Machine  	<- A name for your machine
 casinoName=The CASINO  	<- The name of your casino which will appear on the display
 attractMessage=Welcome to the [CASINONAME]! Enjoy your stay! Please insert your Player Card     <- The attract message text
