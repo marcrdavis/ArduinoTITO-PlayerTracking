@@ -12,6 +12,8 @@ By Marc Davis (10/13/2024)
 
   
   6/21: Sorry- found a bug in the hosted UI on the MEGA sketches - working on it.
+  Also there seems to be a security change in Chrome which will cause CORS errors for the hosted UI.
+  I am working to fix that.
   
   
   Version 3.1 Build 20260619 (ALL SKETCHES)
