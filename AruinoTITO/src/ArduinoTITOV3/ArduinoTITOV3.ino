@@ -1,6 +1,6 @@
 /*
-  Arduino TITO v3.1.20260619
-  by Marc R. Davis - Copyright (c) 2020-2026 All Rights Reserved
+  Arduino TITO v3.0.20240117T
+  by Marc R. Davis - Copyright (c) 2020-2024 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
   Portions of the Arduino SAS protocol implementation by Ian Walker - Thank you!

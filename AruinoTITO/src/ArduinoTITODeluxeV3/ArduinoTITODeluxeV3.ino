@@ -1,5 +1,5 @@
 /*
-  Arduino TITO Deluxe v3.1.20260619
+  Arduino TITO Deluxe v3.0.20240117D
   by Marc R. Davis - Copyright (c) 2020-2024 All Rights Reserved
   https://github.com/marcrdavis/ArduinoTITO-PlayerTracking
 
@@ -39,9 +39,6 @@
 // ------------------------------------------------------------------------------------------------------------
 // Core Variables
 // ------------------------------------------------------------------------------------------------------------
-
-String gameName = "Slot Machine";
-String versionString = "3.1.20260619";
 
 bool changeToCredits = 0; // Set to 1 to enable Change to Credits
 bool useDHCP = 0; // Set to 1 to enable DHCP
@@ -334,9 +331,11 @@ void htmlPoll()
 
     if (strstr(stringData,"rb=")) // Reboot Arduino
     {
-      // Return status/result to host     
-      client.print(F("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\n")); 
-      client.print(F("OK"));
+      client.print(F("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n<!DOCTYPE HTML>\r\n<html><head><meta http-equiv='Refresh' content='8; url=\""));
+      client.print(webUI);
+      client.print(ip);
+      client.println(F("\"' /></head></html>"));
+      client.print(F("Rebooting..."));
       client.stop();
       resetFunc();
       return;
@@ -362,7 +361,7 @@ void htmlPoll()
       // Show web interface
       client.print(F("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n<!DOCTYPE HTML>\r\n<html><head><meta http-equiv='Refresh' content='0; url=\""));
       client.print(webUI);
-      client.print(ip + "&board=DELUXE&gn=" + gameName + "&cp=&v=" + versionString);
+      client.print(ip);
       client.println(F("\"' /></head></html>"));
     }
     else
