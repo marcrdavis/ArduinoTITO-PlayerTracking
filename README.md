@@ -10,6 +10,10 @@ By Marc Davis (10/13/2024)
   with the BETTORSlots TITO and TITO Deluxe hardware. Please see the included documentation for
   more details.
 
+  
+  6/21: Sorry- found a bug in the hosted UI on the MEGA sketches - working on it.
+  
+  
   Version 3.1 Build 20260619 (ALL SKETCHES)
   - Adds the new web management console for all network-capable sketches
   - New webUI now supports MEGA features
