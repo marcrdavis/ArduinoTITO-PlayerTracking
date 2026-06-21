@@ -10,7 +10,13 @@ By Marc Davis (10/13/2024)
   with the BETTORSlots TITO and TITO Deluxe hardware. Please see the included documentation for
   more details.
 
-  NEW! NOVEMBER 22, 2025
+  Version 3.1 Build 20260619 (ALL SKETCHES)
+  - Adds the new web management console for all network-capable sketches
+  - New webUI now supports MEGA features
+  - MEGA version will host the UI locally; but can be switched to use the online version by setting webHostedUI to 1 in the config.txt file
+  - Updated documentation
+
+  NOVEMBER 22, 2025
   - New Web Management Console for the Deluxe sketches. This will eventually be ported to the Mega sketches
 
   Version 3.0 Build 20241013DR4
