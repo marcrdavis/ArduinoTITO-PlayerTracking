@@ -1548,6 +1548,9 @@ void htmlPoll()
     // Uses and expands on codes from BETTORSlots TITO for compatibility with remote app
     String command = querystring.substring(0, 2);
 
+    // Ignore browser-only querystring values injected into the local UI URL
+    if (querystring.startsWith("ip=")) command = "";
+
     if (url.equals("/") && command != "")
     {
       if (command == "ps") // Player Statistics
