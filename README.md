@@ -14,6 +14,8 @@ By Marc Davis (10/13/2024)
   6/21: Sorry- found a bug in the hosted UI on the MEGA sketches - working on it.
   Also there seems to be a security change in Chrome which will cause CORS errors for the hosted UI.
   I am working to fix that.
+
+  With a little AI help I am going to get the SD card support working again (and stable) in the Deluxe sketches; There are some browser inconsistencies using the internet-hosted UI and going from secure to non-secure sites + some new CORS problems. Local hosting is not affected. Give me a couple of days to iron it out.
   
   
   Version 3.1 Build 20260619 (ALL SKETCHES)
