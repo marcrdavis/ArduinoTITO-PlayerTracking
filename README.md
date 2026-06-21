@@ -18,7 +18,7 @@ By Marc Davis (10/13/2024)
   With a little AI help I am going to get the SD card support working again (and stable) in the Deluxe sketches; There are some browser inconsistencies using the internet-hosted UI and going from secure to non-secure sites + some new CORS problems. Local hosting is not affected. Give me a couple of days to iron it out.
   
   
-  Version 3.1 Build 20260619 (ALL SKETCHES)
+  Version 3.1 Build 20260619 (ALL SKETCHES) 6/21 - PLEASE HOLD ON USING THESE FOR NOW
   - Adds the new web management console for all network-capable sketches
   - New webUI now supports MEGA features
   - MEGA version will host the UI locally; but can be switched to use the online version by setting webHostedUI to 1 in the config.txt file
