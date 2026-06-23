@@ -11,10 +11,10 @@ By Marc Davis (10/13/2024)
   more details.
 
   
-  6/21: Sorry- found a bug in the hosted UI on the new build (20260619) - working on it.
-  Reverting to previous version; will release updated code soon.
-  
-  
+---------------------------------------------------------------------------------------
+IMPORTANT NEWS! Version 4.0 of the Arduino TITO and Player Tracking Project is coming!
+---------------------------------------------------------------------------------------
+
 
   NOVEMBER 22, 2025
   - New Web Management Console for the Deluxe sketches. This will eventually be ported to the Mega sketches
