@@ -17,7 +17,7 @@ IMPORTANT NEWS! Version 4.0 of the Arduino TITO and Player Tracking Project is c
 New versions of all sketches will be released soon! Here is a preview:
 
   - New Web Management Console for all network-enabled sketches
-  - Restores SD card support to the R3 Deluxe and adds SD card support the R4 WiFi
+  - Restores SD card support to the R3 Deluxe and adds SD card support for the R4 WiFi
   - Completely rewritten and optimized code for the MEGA, R3 UNO and R4 WiFi
   - Updating of SD card files remotely now supported on all network-enabled sketches
   - Updated documentation
