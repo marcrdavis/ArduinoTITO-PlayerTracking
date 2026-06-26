@@ -1,0 +1,7 @@
+changeToCredits=0
+changeCredits=200
+noSDCard=0
+ipAddress=
+macAddress=
+gameName=Slot Machine
+

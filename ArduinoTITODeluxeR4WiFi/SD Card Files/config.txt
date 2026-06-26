@@ -1,0 +1,10 @@
+logToSerial=1
+changeToCredits=0
+changeCredits=200
+noSDCard=0
+useDHCP=1
+ipAddress=
+wifiSSID=
+wifiPassword=
+gameName=Slot Machine
+

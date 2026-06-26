@@ -1,0 +1,26 @@
+displayWidth=20
+displayHeight=2
+displayCols=20
+displayRows=2
+scrollDelay=110
+logToSerial=1
+localStorage=1
+onlyTITO=0
+changeToCredits=0
+changeCredits=200
+adminPin=1234
+compPercentage=0.01
+noSDCard=0
+useDHCP=1
+ipAddress=
+macAddress=
+serverIPAddress=
+wifiSSID=
+wifiPassword=
+autoAddCredits=0
+creditFloor=10
+gameName=Slot Machine
+casinoName=The CASINO
+attractMessage=Welcome to [CASINONAME]! Enjoy your stay! Please insert your Player Card
+playerMessage=Welcome back [CARDHOLDER]! Enjoy your stay in [CASINONAME]!
+
