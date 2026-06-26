@@ -19,8 +19,10 @@ By Marc Davis (6/253/2026)
   - SD card support can be disabled on Deluxe sketches if desired; if you do disable it you will not get the WebUI; instead you will need to manage the game from the Game Manager app.
   - Completely rewritten and optimized code for the MEGA, R3 UNO and R4 WiFi
   - Updating of SD card files remotely now supported on all network-enabled sketches
+  - New SD card settings; MAC address can now be set in the config file (MEGA/R3)
   - Updated documentation
   - Improved stability
+  - Reorganized repository; older versions can be found in \Previous Versions
   - Lots of bug fixes
 
    ---
