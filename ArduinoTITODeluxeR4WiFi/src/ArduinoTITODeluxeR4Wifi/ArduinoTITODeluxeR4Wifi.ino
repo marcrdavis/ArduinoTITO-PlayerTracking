@@ -59,8 +59,8 @@ const size_t HTTP_QUERY_VALUE_BUFFER_SIZE = 128;
 char gameName[GAME_NAME_BUFFER_SIZE] = "Slot Machine"; // Set this to the name of your game
 char versionString[VERSION_STRING_BUFFER_SIZE] = "4.0.20260623"; // Do not change
 char changeCredits[CHANGE_CREDITS_BUFFER_SIZE] = "500"; // Set the number of credits to add 
-char ssid[WIFI_SSID_BUFFER_SIZE] = "DAVWRT1900AC"; // Set your WiFi SSID here
-char pass[WIFI_PASS_BUFFER_SIZE] = "enterprise"; // Set your WiFi Password here
+char ssid[WIFI_SSID_BUFFER_SIZE] = ""; // Set your WiFi SSID here
+char pass[WIFI_PASS_BUFFER_SIZE] = ""; // Set your WiFi Password here
 
 bool sasOnline = false; // Do not change
 bool sasError = false; // Do not change
@@ -310,13 +310,13 @@ void readConfig()
     {
       useDHCP = parseBoolConfigValue(value);
     }
-    else if (strcmp(key, "ssid") == 0)
+    else if (strcmp(key, "wifiSSID") == 0)
     {
-      copyConfigValue(ssid, sizeof(ssid), value, F("ssid"));
+      copyConfigValue(ssid, sizeof(ssid), value, F("wifiSSID"));
     }
-    else if (strcmp(key, "pass") == 0)
+    else if (strcmp(key, "wifiPassword") == 0)
     {
-      copyConfigValue(pass, sizeof(pass), value, F("pass"));
+      copyConfigValue(pass, sizeof(pass), value, F("wifiPassword"));
     }
     else if (strcmp(key, "ipAddress") == 0)
     {
